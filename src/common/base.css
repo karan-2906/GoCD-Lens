@@ -1,0 +1,731 @@
+/* Design tokens and the primitives every page shares.
+   Dark is the default; `data-theme="light"` on <html> flips it, and with no
+   attribute at all the OS preference decides. */
+
+:root {
+  --bg: #0d1117;
+  --bg-elev: #12181f;
+  --surface: #161b22;
+  --surface-hover: #1c232c;
+  --border: #262c36;
+  --border-strong: #363d49;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --text-faint: #6e7681;
+
+  --accent: #4d8bf5;
+  --accent-soft: rgba(77, 139, 245, 0.14);
+  --accent-text: #ffffff;
+
+  --pass: #3fb950;
+  --pass-soft: rgba(63, 185, 80, 0.14);
+  --fail: #f85149;
+  --fail-soft: rgba(248, 81, 73, 0.14);
+  --build: #58a6ff;
+  --build-soft: rgba(88, 166, 255, 0.14);
+  --cancel: #d29922;
+  --cancel-soft: rgba(210, 153, 34, 0.14);
+  --idle: #6e7681;
+  --idle-soft: rgba(110, 118, 129, 0.14);
+
+  --radius: 10px;
+  --radius-sm: 7px;
+  --radius-lg: 14px;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+
+  --speed: 140ms;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    --bg: #f6f8fa;
+    --bg-elev: #ffffff;
+    --surface: #ffffff;
+    --surface-hover: #f3f5f8;
+    --border: #d8dee4;
+    --border-strong: #c2c9d1;
+    --text: #1f2328;
+    --text-muted: #59636e;
+    --text-faint: #818b98;
+
+    --accent: #2563eb;
+    --accent-soft: rgba(37, 99, 235, 0.1);
+
+    --pass: #1a7f37;
+    --pass-soft: rgba(26, 127, 55, 0.1);
+    --fail: #cf222e;
+    --fail-soft: rgba(207, 34, 46, 0.1);
+    --build: #0969da;
+    --build-soft: rgba(9, 105, 218, 0.1);
+    --cancel: #9a6700;
+    --cancel-soft: rgba(154, 103, 0, 0.1);
+    --idle: #818b98;
+    --idle-soft: rgba(129, 139, 152, 0.12);
+
+    --shadow: 0 1px 2px rgba(31, 35, 40, 0.08), 0 8px 24px rgba(31, 35, 40, 0.08);
+    --shadow-sm: 0 1px 2px rgba(31, 35, 40, 0.08);
+    color-scheme: light;
+  }
+}
+
+:root[data-theme='light'] {
+  --bg: #f6f8fa;
+  --bg-elev: #ffffff;
+  --surface: #ffffff;
+  --surface-hover: #f3f5f8;
+  --border: #d8dee4;
+  --border-strong: #c2c9d1;
+  --text: #1f2328;
+  --text-muted: #59636e;
+  --text-faint: #818b98;
+
+  --accent: #2563eb;
+  --accent-soft: rgba(37, 99, 235, 0.1);
+
+  --pass: #1a7f37;
+  --pass-soft: rgba(26, 127, 55, 0.1);
+  --fail: #cf222e;
+  --fail-soft: rgba(207, 34, 46, 0.1);
+  --build: #0969da;
+  --build-soft: rgba(9, 105, 218, 0.1);
+  --cancel: #9a6700;
+  --cancel-soft: rgba(154, 103, 0, 0.1);
+  --idle: #818b98;
+  --idle-soft: rgba(129, 139, 152, 0.12);
+
+  --shadow: 0 1px 2px rgba(31, 35, 40, 0.08), 0 8px 24px rgba(31, 35, 40, 0.08);
+  --shadow-sm: 0 1px 2px rgba(31, 35, 40, 0.08);
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/**
+ * The browser's own `[hidden] { display: none }` lives in the user-agent
+ * stylesheet, so any author rule that sets `display` outranks it. Several
+ * controls here are toggled with `.hidden = true` and also carry a class that
+ * sets a display -- `.icon-btn`, `.view-picker`, `.btn`, `.two-up` -- so
+ * without this they stay on screen no matter what the JavaScript says.
+ */
+[hidden] {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: 620;
+  letter-spacing: -0.01em;
+}
+
+a {
+  color: var(--accent);
+}
+
+.icon {
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sprite {
+  display: none;
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.faint {
+  color: var(--text-faint);
+}
+
+.mono {
+  font-family: var(--mono);
+  font-size: 0.92em;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.spacer {
+  flex: 1;
+  min-width: 0;
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* ------------------------------------------------------------- buttons */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 13px;
+  font: inherit;
+  font-weight: 540;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background var(--speed) ease,
+    border-color var(--speed) ease,
+    transform var(--speed) ease;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: var(--text-faint);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--accent-text);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent);
+  filter: brightness(1.1);
+  border-color: transparent;
+}
+
+.btn-danger {
+  background: var(--fail);
+  border-color: transparent;
+  color: #fff;
+}
+
+.btn-danger:hover:not(:disabled) {
+  filter: brightness(1.08);
+  border-color: transparent;
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-muted);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: transparent;
+  color: var(--text);
+}
+
+.btn-sm {
+  padding: 4px 9px;
+  font-size: 12px;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--speed) ease;
+}
+
+.icon-btn:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.icon-btn.starred {
+  color: var(--cancel);
+}
+
+.icon-btn.watching {
+  color: var(--accent);
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* -------------------------------------------------------------- inputs */
+
+input[type='text'],
+input[type='url'],
+input[type='password'],
+input[type='number'],
+select,
+textarea {
+  width: 100%;
+  padding: 8px 11px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--bg-elev);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  transition: border-color var(--speed) ease;
+}
+
+input::placeholder {
+  color: var(--text-faint);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 560;
+  color: var(--text-muted);
+  margin-bottom: 5px;
+}
+
+.field {
+  margin-bottom: 16px;
+}
+
+.field .hint {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--text-faint);
+  line-height: 1.5;
+}
+
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  cursor: pointer;
+}
+
+.check input {
+  margin: 2px 0 0;
+  accent-color: var(--accent);
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+
+.check span {
+  font-size: 13px;
+  color: var(--text);
+}
+
+/**
+ * A disabled checkbox greys only the box itself; its label stays at full
+ * contrast and still reads as something you can click. Dim the whole row so
+ * "you cannot use this yet" is visible rather than only discoverable by
+ * clicking and having nothing happen.
+ */
+.check:has(input:disabled) {
+  cursor: not-allowed;
+}
+
+.check:has(input:disabled) span,
+.check:has(input:disabled) .link-btn {
+  color: var(--text-faint);
+}
+
+.check:has(input:disabled) .hint {
+  opacity: 0.7;
+}
+
+/* A <span>, so without this it flows inline and reads as part of the label. */
+.check .hint {
+  display: block;
+  margin: 3px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-faint);
+}
+
+/* --------------------------------------------------------- stage strip */
+
+/* Shared by the dashboard card and the popup row, so they cannot drift. */
+.stage-strip {
+  display: flex;
+  gap: 3px;
+  height: 5px;
+}
+
+.stage-seg {
+  flex: 1;
+  border-radius: 2px;
+  background: var(--idle-soft);
+  min-width: 8px;
+}
+
+.stage-seg.s-Passed {
+  background: var(--pass);
+}
+.stage-seg.s-Failed {
+  background: var(--fail);
+}
+.stage-seg.s-Building,
+.stage-seg.s-Scheduled {
+  background: var(--build);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+.stage-seg.s-Cancelled {
+  background: var(--cancel);
+}
+
+/* A popup row is one line, so the strip rides alongside rather than under. */
+.stage-strip.compact {
+  width: 54px;
+  flex: none;
+  height: 4px;
+  gap: 2px;
+}
+
+.stage-strip.compact .stage-seg {
+  min-width: 4px;
+}
+
+/* -------------------------------------------------------------- status */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px 2px 7px;
+  font-size: 11.5px;
+  font-weight: 620;
+  letter-spacing: 0.01em;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.pill::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+.tone-pass {
+  color: var(--pass);
+  background: var(--pass-soft);
+}
+.tone-fail {
+  color: var(--fail);
+  background: var(--fail-soft);
+}
+.tone-build {
+  color: var(--build);
+  background: var(--build-soft);
+}
+.tone-cancel {
+  color: var(--cancel);
+  background: var(--cancel-soft);
+}
+.tone-idle {
+  color: var(--idle);
+  background: var(--idle-soft);
+}
+
+.tone-build::before {
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.75);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* -------------------------------------------------------------- toasts */
+
+.toast-host {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+.toast {
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  max-width: 380px;
+  animation: slide-in 180ms ease;
+}
+
+.toast-ok {
+  border-left-color: var(--pass);
+}
+.toast-warn {
+  border-left-color: var(--cancel);
+}
+.toast-error {
+  border-left-color: var(--fail);
+}
+
+.toast.leaving {
+  opacity: 0;
+  transform: translateY(6px);
+  transition: all 240ms ease;
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* -------------------------------------------------------------- modals */
+
+.modal {
+  padding: 0;
+  border: none;
+  background: transparent;
+  max-width: min(560px, calc(100vw - 32px));
+  width: min(560px, calc(100vw - 32px));
+}
+
+.modal::backdrop {
+  background: rgba(1, 4, 9, 0.6);
+  backdrop-filter: blur(2px);
+}
+
+.modal-card {
+  padding: 22px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+.modal-title {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.modal-body {
+  margin: 0 0 18px;
+  font-size: 13.5px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+/* --------------------------------------------------------- empty states */
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 52px 24px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.empty h3 {
+  font-size: 15px;
+  color: var(--text);
+}
+
+.empty p {
+  margin: 0;
+  max-width: 420px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.spin {
+  animation: spin 900ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ------------------------------------------------------------- banners */
+
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 14px;
+  font-size: 13px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  line-height: 1.55;
+}
+
+.banner-warn {
+  border-color: color-mix(in srgb, var(--cancel) 45%, var(--border));
+  background: var(--cancel-soft);
+  color: var(--text);
+}
+
+.banner-error {
+  border-color: color-mix(in srgb, var(--fail) 45%, var(--border));
+  background: var(--fail-soft);
+}
+
+.banner-info {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: var(--accent-soft);
+}
+
+.banner .icon {
+  margin-top: 2px;
+}
+
+::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-faint);
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/**
+ * A one-shot highlight for something that just changed, or that a link has just
+ * pointed you at.
+ *
+ * A ring that expands outward and fades, twice -- no colour and no background
+ * wash. Tinting the element meant picking a colour that then competed with the
+ * status palette, and washing the background of a card made it flicker against
+ * the page. An outline touches neither, and reads the same on both themes.
+ *
+ * The reduced-motion rule earlier in this file collapses the duration, which
+ * means the value simply updates with no flourish -- the correct outcome for
+ * someone who asked not to be animated at.
+ */
+@keyframes flash-change {
+  from {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--text) 40%, transparent);
+  }
+  to {
+    box-shadow: 0 0 0 12px transparent;
+  }
+}
+
+.flash {
+  animation: flash-change 800ms ease-out 2;
+  border-radius: 5px;
+}
+
+/* Follow the corners of whatever is being highlighted. */
+.card.flash {
+  border-radius: var(--radius-lg);
+}

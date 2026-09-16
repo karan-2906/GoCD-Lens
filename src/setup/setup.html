@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>GoCD Lens - Settings</title>
+    <link rel="stylesheet" href="../common/base.css" />
+    <link rel="stylesheet" href="setup.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="page-head">
+        <div class="brand">
+          <img src="../../icons/icon48.png" alt="" width="34" height="34" />
+          <div>
+            <h1>GoCD Lens</h1>
+            <p class="muted">Your pipelines, straight from the API.</p>
+          </div>
+        </div>
+        <a class="btn btn-ghost" id="open-dashboard" href="../dashboard/dashboard.html">Open dashboard</a>
+      </header>
+
+      <section class="card" id="welcome" hidden>
+        <h2>Welcome</h2>
+        <p class="muted">
+          GoCD Lens reads your pipelines from the GoCD REST API and draws its own dashboard, so it
+          keeps working when the GoCD web UI is restarting, half-loaded, or has decided your
+          pipelines do not exist. Connect a server below and you are done.
+        </p>
+      </section>
+
+      <section class="card" id="connection-card">
+        <h2>Connect to GoCD</h2>
+
+        <div class="field">
+          <label for="server-url">Server URL</label>
+          <input
+            type="url"
+            id="server-url"
+            placeholder="https://gocd.example.com/go"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <p class="hint">
+            The address you normally open GoCD at, including the path it lives under - usually
+            ending in <code>/go</code>.
+          </p>
+        </div>
+
+        <div id="url-warning"></div>
+
+        <fieldset class="field auth-modes">
+          <legend>How should it sign in?</legend>
+
+          <label class="auth-option" for="auth-session">
+            <input type="radio" name="auth" id="auth-session" value="session" checked />
+            <span class="auth-body">
+              <span class="auth-title">Use my existing GoCD login <em class="tag tag-good">nothing stored</em></span>
+              <span class="hint">
+                Rides the session you already have in this browser. No password or token is saved
+                anywhere. Start here - if GoCD works in a tab, this works.
+              </span>
+            </span>
+          </label>
+
+          <label class="auth-option" for="auth-token">
+            <input type="radio" name="auth" id="auth-token" value="token" />
+            <span class="auth-body">
+              <span class="auth-title">Personal access token</span>
+              <span class="hint">
+                Survives session expiry and avoids GoCD's CSRF checks on actions like trigger and
+                pause. Create one under your GoCD profile &rarr; Personal Access Tokens.
+              </span>
+            </span>
+          </label>
+
+          <label class="auth-option" for="auth-basic">
+            <input type="radio" name="auth" id="auth-basic" value="basic" />
+            <span class="auth-body">
+              <span class="auth-title">Username and password</span>
+              <span class="hint">For older servers that do not offer access tokens.</span>
+            </span>
+          </label>
+        </fieldset>
+
+        <div class="field" id="token-field" hidden>
+          <label for="token">Access token</label>
+          <div class="secret-row">
+            <input type="password" id="token" autocomplete="off" spellcheck="false" placeholder="Paste your GoCD token" />
+            <button type="button" class="icon-btn" id="toggle-token" title="Show or hide"></button>
+          </div>
+          <p class="hint" id="token-hint"></p>
+        </div>
+
+        <div class="two-up" id="basic-fields" hidden>
+          <div class="field">
+            <label for="username">Username</label>
+            <input type="text" id="username" autocomplete="off" spellcheck="false" />
+          </div>
+          <div class="field">
+            <label for="password">Password</label>
+            <input type="password" id="password" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="actions-row">
+          <button class="btn btn-primary" id="save">Connect</button>
+          <button class="btn" id="test">Test without saving</button>
+          <button class="btn btn-ghost" id="disconnect" hidden>Disconnect</button>
+        </div>
+        <div id="connection-result"></div>
+      </section>
+
+      <section class="card" id="diagnostics-card">
+        <div class="card-head">
+          <h2>Is it GoCD, or is it me?</h2>
+          <button class="btn btn-sm" id="run-diagnostics">Run check</button>
+        </div>
+        <p class="muted small">
+          Checks the GoCD API directly to verify whether your pipelines are responding as expected.
+          If the GoCD UI isn't responding but the API is, your pipelines are still running normally.
+          Feel free to keep using GoCD Lens to monitor them.
+        </p>
+        <div id="diagnostics"></div>
+      </section>
+
+      <section class="card">
+        <h2 id="how-often">How often to check</h2>
+
+        <div class="field">
+          <label for="poll">Refresh the dashboard every</label>
+          <select id="poll">
+            <option value="10">10 seconds</option>
+            <option value="15">15 seconds</option>
+            <option value="30">30 seconds</option>
+            <option value="60">1 minute</option>
+            <option value="120">2 minutes</option>
+            <option value="0">Only when I click refresh</option>
+          </select>
+          <p class="hint">
+            How frequently the dashboard checks for updates while it is open and visible.
+          </p>
+        </div>
+
+        <div class="field">
+          <label for="background-minutes">Check in the background every</label>
+          <select id="background-minutes">
+            <option value="1">1 minute</option>
+            <option value="5">5 minutes</option>
+            <option value="15">15 minutes</option>
+            <option value="60">1 hour</option>
+            <option value="0">Never - only while a tab is open</option>
+          </select>
+          <p class="hint">
+            How frequently to check for updates when the dashboard is not open. This keeps the
+            toolbar badge current; set it to Never and the badge only updates while a tab is open.
+          </p>
+        </div>
+
+        <div class="field">
+          <label for="badge-source">The toolbar badge counts</label>
+          <select id="badge-source">
+            <option value="watched">Only pipelines I am watching</option>
+            <option value="starred">Only my starred pipelines</option>
+            <option value="view">Whichever view is open</option>
+          </select>
+          <p class="hint">
+            Choose which pipelines are included in the toolbar badge count. Blue shows the number of
+            running pipelines. If none are running, red shows the number of failed pipelines.
+          </p>
+        </div>
+
+        <div id="load-estimate"></div>
+      </section>
+
+      <section class="card">
+        <h2>Notifications</h2>
+
+        <div id="notification-delay"></div>
+
+        <label class="check" for="notifications">
+          <input type="checkbox" id="notifications" />
+          <span>
+            Desktop notifications
+            <span class="hint">
+              Get notified about pipelines you're watching when a run starts, passes, or fails.
+            </span>
+          </span>
+        </label>
+
+        <div id="notification-permission"></div>
+
+        <label class="check" for="notify-when-closed">
+          <input type="checkbox" id="notify-when-closed" />
+          <span>
+            Notify me even when no dashboard tab is open
+            <span class="hint">
+              Allow those background checks to notify you. Checks run periodically as mentioned in
+              <button type="button" class="link-btn" id="goto-background">background check</button>.
+            </span>
+          </span>
+        </label>
+
+        <label class="check" for="sound">
+          <input type="checkbox" id="sound" />
+          <span>
+            Play a short chime
+            <span class="hint">
+              Play a short sound along with desktop notifications when an alert is triggered.
+            </span>
+          </span>
+        </label>
+
+        <div class="chime-row check-aside" id="sound-table" hidden>
+          <span class="chime-label">Hear a sample when a pipeline:</span>
+          <button class="btn btn-sm" id="preview-start" type="button">starts</button>
+          <button class="btn btn-sm" id="preview-success" type="button">passes</button>
+          <button class="btn btn-sm" id="preview-failure" type="button">fails</button>
+        </div>
+
+        <label class="check" for="notify-starred">
+          <input type="checkbox" id="notify-starred" />
+          <span>
+            Also notify for starred pipelines
+            <span class="hint">
+              Receive notifications for starred pipelines when their status changes from passing
+              to failing or from failing back to passing.
+            </span>
+          </span>
+        </label>
+      </section>
+
+      <section class="card">
+        <h2>Appearance</h2>
+        <div class="two-up">
+          <div class="field">
+            <label for="theme">Theme</label>
+            <select id="theme">
+              <option value="system">Match my system</option>
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="density">Pipeline list</label>
+            <select id="density">
+              <option value="comfortable">Cards</option>
+              <option value="compact">Compact rows</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section class="card privacy">
+        <h2>Where your data lives</h2>
+        <ul class="privacy-list" id="privacy-list"></ul>
+        <div class="actions-row">
+          <button class="btn btn-danger" id="wipe">Erase everything</button>
+        </div>
+      </section>
+
+      <footer class="page-foot muted small">
+        GoCD Lens keeps your data local and only communicates with the GoCD servers you configure.
+        No analytics. No telemetry. No remote code.
+      </footer>
+    </main>
+
+    <script type="module" src="setup.js"></script>
+  </body>
+</html>

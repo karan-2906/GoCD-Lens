@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>GoCD Lens audio</title>
+  </head>
+  <body>
+    <!--
+      An invisible page whose only job is to play a chime. A Manifest V3 service
+      worker has no DOM and therefore no way to play audio, so Chrome's offscreen
+      document is the supported route. It never renders anywhere.
+    -->
+    <script type="module" src="offscreen.js"></script>
+  </body>
+</html>

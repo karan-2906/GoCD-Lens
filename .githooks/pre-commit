@@ -1,0 +1,28 @@
+#!/bin/sh
+# Runs the suite before every commit. It is ~150ms and has no dependencies,
+# so there is no reason to make this opt-in or to sample a subset.
+#
+# tests/package-integrity.test.mjs is the one that matters most here: it checks
+# the invariants (storage.local only, no innerHTML/eval, empty host_permissions,
+# no content scripts or remote assets) against the files as they sit on disk.
+# Catching a breach at commit time is the whole point — once it is pushed, the
+# claim "your GoCD server is the only host contacted" has already shipped.
+#
+# Bypass with `git commit --no-verify` when you genuinely mean to.
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "pre-commit: node not found; skipping tests." >&2
+  exit 0
+fi
+
+echo "pre-commit: running tests..."
+if ! npm test --silent >/tmp/gocd-lens-pre-commit.log 2>&1; then
+  echo >&2
+  tail -40 /tmp/gocd-lens-pre-commit.log >&2
+  echo >&2
+  echo "pre-commit: tests failed — commit aborted." >&2
+  echo "pre-commit: full output in /tmp/gocd-lens-pre-commit.log" >&2
+  exit 1
+fi
+
+echo "pre-commit: tests passed."

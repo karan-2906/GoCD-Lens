@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>GoCD Lens</title>
+    <link rel="stylesheet" href="../common/base.css" />
+    <link rel="stylesheet" href="dashboard.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar-left">
+        <a class="brand" id="home" href="#" title="Back to the top of this view">
+          <img src="../../icons/icon32.png" alt="" width="22" height="22" />
+          <span>GoCD Lens</span>
+        </a>
+
+        <div class="search-wrap">
+          <span class="search-icon" id="search-icon"></span>
+          <input
+            type="text"
+            id="search"
+            placeholder="Search pipelines or groups -  a few letters is enough, like wabp"
+            autocomplete="off"
+            spellcheck="false"
+            aria-label="Search pipelines"
+          />
+          <button class="icon-btn search-clear" id="search-clear" hidden title="Clear search"></button>
+        </div>
+      </div>
+
+      <div class="topbar-center">
+        <div class="view-picker" id="view-picker" hidden>
+          <span class="view-picker-icon" id="view-picker-icon"></span>
+          <select id="view-select" class="view-select" aria-label="GoCD view"></select>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <span class="freshness" id="freshness"></span>
+        <button class="icon-btn" id="refresh" title="Refresh now"></button>
+        <button class="icon-btn" id="theme-toggle" title="Switch theme"></button>
+        <button class="icon-btn" id="settings" title="Settings"></button>
+      </div>
+    </header>
+
+    <div class="filters" id="filters"></div>
+
+    <div id="banners" class="banners"></div>
+
+    <main class="layout" id="layout">
+      <aside class="sidebar">
+        <div class="nav-heading" id="sidebar-heading">Pipeline groups</div>
+        <div class="search-wrap sidebar-search" id="group-search-wrap">
+          <span class="search-icon" id="group-search-icon"></span>
+          <input
+            type="text"
+            id="group-search"
+            placeholder="Filter groups"
+            autocomplete="off"
+            spellcheck="false"
+            aria-label="Filter pipeline groups"
+          />
+          <button
+            class="icon-btn search-clear"
+            id="group-search-clear"
+            hidden
+            title="Clear the group filter"
+          ></button>
+        </div>
+        <div class="nav-list" id="group-list"></div>
+      </aside>
+      <section class="content" id="content"></section>
+    </main>
+
+    <dialog class="viewer" id="viewer">
+      <div class="viewer-card">
+        <header class="viewer-head">
+          <div class="viewer-title" id="viewer-title"></div>
+          <div class="spacer"></div>
+          <div class="viewer-tabs" id="viewer-tabs"></div>
+          <button class="icon-btn" id="viewer-close" title="Close (Esc)"></button>
+        </header>
+        <div class="viewer-toolbar" id="viewer-toolbar"></div>
+        <div class="viewer-body" id="viewer-body"></div>
+        <footer class="viewer-foot" id="viewer-foot"></footer>
+      </div>
+    </dialog>
+
+    <script type="module" src="dashboard.js"></script>
+  </body>
+</html>

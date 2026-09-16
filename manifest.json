@@ -1,0 +1,44 @@
+{
+  "manifest_version": 3,
+  "name": "GoCD Lens",
+  "version": "1.0.0",
+  "description": "A friendly dashboard for GoCD pipelines that keeps working when the GoCD web UI doesn't.",
+  "minimum_chrome_version": "116",
+
+  "permissions": ["storage", "alarms", "notifications", "offscreen"],
+
+  "host_permissions": [],
+  "optional_host_permissions": ["https://*/*", "http://*/*"],
+
+  "background": {
+    "service_worker": "src/background/service-worker.js",
+    "type": "module"
+  },
+
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_title": "GoCD Lens",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+
+  "options_ui": {
+    "page": "src/setup/setup.html",
+    "open_in_tab": true
+  },
+
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; connect-src https: http:; img-src 'self' data:; style-src 'self'; script-src 'self'; object-src 'none'; frame-src 'none'; child-src 'none'; base-uri 'none'; form-action 'none'"
+  }
+}

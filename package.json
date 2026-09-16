@@ -1,0 +1,19 @@
+{
+  "name": "gocd-lens",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A Chrome extension that reads GoCD pipelines from the API, so it keeps working when the GoCD web UI does not.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test \"tests/*.test.mjs\"",
+    "test:watch": "node --test --watch \"tests/*.test.mjs\"",
+    "icons": "python3 tools/make-icons.py",
+    "sounds": "python3 tools/make-sounds.py",
+    "screenshots": "node tools/make-screenshots.mjs",
+    "hooks": "git config core.hooksPath .githooks",
+    "package": "rm -f gocd-lens.zip && zip -r gocd-lens.zip manifest.json icons sounds src -x '*.DS_Store'"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

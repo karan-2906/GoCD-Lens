@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>GoCD Lens</title>
+    <link rel="stylesheet" href="../common/base.css" />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="pop-head">
+      <img src="../../icons/icon32.png" alt="" width="20" height="20" />
+      <strong>GoCD Lens</strong>
+      <span class="spacer"></span>
+      <span class="freshness" id="freshness"></span>
+      <button class="icon-btn" id="refresh" title="Refresh"></button>
+      <button class="icon-btn" id="settings" title="Settings"></button>
+    </header>
+
+    <div class="pop-controls" id="controls">
+      <div class="view-picker" id="view-picker" hidden>
+        <span class="view-picker-icon" id="view-picker-icon"></span>
+        <select id="view-select" class="view-select" aria-label="GoCD view"></select>
+      </div>
+
+      <div class="search-wrap">
+        <span class="search-icon" id="search-icon"></span>
+        <input
+          type="text"
+          id="search"
+          placeholder="Search this view"
+          autocomplete="off"
+          spellcheck="false"
+          aria-label="Search pipelines"
+        />
+        <button class="icon-btn search-clear" id="search-clear" hidden title="Clear"></button>
+      </div>
+    </div>
+
+    <div id="summary" class="summary"></div>
+    <div id="body" class="pop-body"></div>
+
+    <footer class="pop-foot">
+      <button class="btn btn-primary" id="open-dashboard">Open full dashboard</button>
+    </footer>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>
