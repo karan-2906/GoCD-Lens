@@ -208,9 +208,16 @@ The sidebar has its own filter box for the same reason -- several hundred group
 rows is a scrolling problem of its own -- and it is markup rather than painted,
 so a poll landing mid-type cannot take the caret with it.
 
-**Re-run offers a job picker.** A stage of a dozen parallel e2e jobs is normal,
-and re-running all of them to retry one flaky job wastes agents. Failed jobs come
-pre-ticked; picking all of them uses `run` rather than `run-selected-jobs`.
+**Re-run picks jobs inline, not in a modal.** A stage of a dozen parallel e2e
+jobs is normal, and re-running all of them to retry one flaky job wastes agents.
+Each job row carries a checkbox before its terminal icon -- only where the stage
+can be re-run *and* has more than one job -- with failed jobs pre-ticked, because
+retrying what broke is the common case. The button reads *Re-run selected (n)*
+until the selection is empty or complete, both of which mean the whole stage and
+use `run` rather than `run-selected-jobs`. The checkbox sits outside the row's
+button: ticking a job must not open its log, and an `<input>` cannot live inside
+a `<button>`. A select-all in the stage header keeps "re-run everything" at one
+click even though failures arrive ticked.
 
 ---
 

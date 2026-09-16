@@ -918,23 +918,56 @@ body {
   flex-direction: column;
 }
 
+/*
+ * The row is a container, not the button: a checkbox cannot live inside a
+ * <button>, and the whole name still has to open the log.
+ */
 .job-row {
   display: flex;
   align-items: center;
+  border-top: 1px solid var(--border);
+  transition: background var(--speed) ease;
+}
+
+.job-row:hover {
+  background: var(--surface-hover);
+}
+
+.job-open {
+  display: flex;
+  align-items: center;
   gap: 9px;
+  flex: 1;
+  min-width: 0;
   padding: 7px 12px;
   font: inherit;
   text-align: left;
   color: inherit;
   background: transparent;
   border: none;
-  border-top: 1px solid var(--border);
   cursor: pointer;
-  transition: background var(--speed) ease;
 }
 
-.job-row:hover {
-  background: var(--surface-hover);
+/* Ticking a job must not open its log, so the checkbox sits outside that button. */
+.job-check {
+  display: flex;
+  align-items: center;
+  padding: 7px 0 7px 12px;
+  cursor: pointer;
+}
+
+.job-check input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  flex: none;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* In the stage header the same control selects or clears every job. */
+.stage-actions .job-check {
+  padding: 0 2px 0 0;
 }
 
 .job-name {
@@ -1312,40 +1345,3 @@ kbd {
 
 /* ------------------------------------------------------------ job picker */
 
-.job-picker {
-  max-height: 320px;
-  overflow-y: auto;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg-elev);
-}
-
-.job-pick {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 7px 11px;
-  font-size: 13px;
-  border-bottom: 1px solid var(--border);
-  cursor: pointer;
-}
-
-.job-pick:last-child {
-  border-bottom: none;
-}
-
-.job-pick:hover {
-  background: var(--surface-hover);
-}
-
-.job-pick input {
-  width: 15px;
-  height: 15px;
-  flex: none;
-  accent-color: var(--accent);
-  margin: 0;
-}
-
-.job-pick .truncate {
-  flex: 1;
-}

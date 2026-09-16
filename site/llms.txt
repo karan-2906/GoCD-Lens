@@ -26,8 +26,9 @@ uses the API.
 - Shows the user's GoCD personalized views, plus two built-in ones (Starred, Watching).
 - Per-pipeline detail: paged run history, stages and jobs, manual approval gates marked as gates,
   and the commit, branch, author and message the run was built from.
-- Actions: run, pause, resume, stop a running stage, and re-run selected jobs within a stage
-  (failed jobs pre-ticked, so retrying one flaky job does not re-run a dozen).
+- Actions: run, pause, resume, stop a running stage, and re-run selected jobs within a stage.
+  Each job row carries a checkbox, with failed jobs pre-ticked, so retrying one flaky job does not
+  re-run a dozen.
 - Console logs tailed live, fetching only new lines, with search, severity colouring, wrapping,
   download and an artifact tree.
 - Optional notifications when a watched pipeline starts or finishes, with a bundled chime.
@@ -72,6 +73,7 @@ component, no account, no sign-up.
 
 ## Links
 
+- Chrome Web Store: https://chromewebstore.google.com/detail/gocd-lens/hlpppcihkjhenaefanggabmhcmigppnd
 - Source code: https://github.com/karan-2906/GoCD-Lens
 - Privacy policy: https://go-cd-lens.vercel.app/privacy
 - lazygocd (terminal UI, same problem): https://github.com/Sahilll15/lazygocd

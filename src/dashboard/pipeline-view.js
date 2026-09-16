@@ -333,8 +333,53 @@ function stageCard(pipeline, run, stage) {
   const status = stageStatus(stage);
   const stageCounter = String(stage.counter ?? '1');
   const manualPending = stage.approval_type === 'manual' && status === 'Unknown';
+  const runnable = (stage.jobs || []).filter((job) => job?.name);
+
+  // A stage with one job has nothing to choose between, and a stage that has not
+  // run or is still running cannot be re-run at all.
+  const picking = !isActive(status) && status !== 'Unknown' && runnable.length > 1;
+
+  /** Job name -> its checkbox, so the button can read the selection. */
+  const boxes = new Map();
+  const chosen = () => [...boxes].filter(([, box]) => box.checked).map(([name]) => name);
+
+  const rerunText = el('span', { text: 'Re-run' });
+  let selectAll = null;
+
+  /**
+   * The button says what it will actually do. Every job ticked is the same
+   * operation as re-running the stage, so it reads "Re-run" then too rather
+   * than claiming a selection that is not really one.
+   */
+  function syncRerun() {
+    const count = chosen().length;
+    const whole = count === 0 || count === boxes.size;
+    rerunText.textContent = whole ? 'Re-run' : `Re-run selected (${count})`;
+    if (selectAll) {
+      selectAll.checked = count === boxes.size && count > 0;
+      selectAll.indeterminate = count > 0 && count < boxes.size;
+    }
+  }
 
   const actions = el('div', { class: 'stage-actions' });
+
+  if (picking) {
+    selectAll = el('input', {
+      type: 'checkbox',
+      onchange: () => {
+        for (const box of boxes.values()) box.checked = selectAll.checked;
+        syncRerun();
+      },
+    });
+    actions.append(
+      el(
+        'label',
+        { class: 'job-check', title: 'Select or clear every job in this stage' },
+        selectAll,
+      ),
+    );
+  }
+
   if (isActive(status)) {
     actions.append(
       el('button', { class: 'btn btn-sm', title: 'Cancel this running stage', onclick: () => cancelStage({ pipeline, counter: run.counter, stage: stage.name, stageCounter }) }, icon('stop', { size: 12 }), 'Stop'),
@@ -345,49 +390,72 @@ function stageCard(pipeline, run, stage) {
         'button',
         {
           class: 'btn btn-sm',
-          title: 'Choose which jobs to run again',
+          title: picking
+            ? 'Run the ticked jobs again, or the whole stage when none are ticked'
+            : 'Run this stage again',
           onclick: () =>
             rerunStage({
               pipeline,
               counter: run.counter,
               stage: stage.name,
               stageCounter,
-              jobs: stage.jobs || [],
+              jobs: runnable,
+              selected: picking ? chosen() : null,
             }),
         },
         icon('rerun', { size: 12 }),
-        'Re-run',
+        rerunText,
       ),
     );
   }
+
   actions.append(
     el('button', { class: 'icon-btn', title: 'Open this stage in the GoCD web UI', onclick: () => openInGoCd('stage', { pipeline, counter: run.counter, stage: stage.name, stageCounter }) }, icon('external')),
   );
 
   const jobs = el('div', { class: 'job-list' });
   for (const job of stage.jobs || []) {
+    const jobState = jobStatus(job);
+    const open = el(
+      'button',
+      {
+        class: 'job-open',
+        onclick: () =>
+          openJobViewer({
+            pipeline,
+            counter: run.counter,
+            stage: stage.name,
+            stageCounter,
+            job: job.name,
+            live: isActive(status),
+          }),
+      },
+      icon('terminal', { size: 13 }),
+      el('span', { class: 'job-name truncate', text: job.name }),
+      statusPill(jobState),
+      icon('chevron-right', { size: 13 }),
+    );
+
+    if (!picking || !job.name) {
+      jobs.append(el('div', { class: 'job-row' }, open));
+      continue;
+    }
+
+    // Failed jobs arrive ticked: retrying what broke is the common case, and a
+    // picker that starts empty would cost a click per job to get back here.
+    const box = el('input', { type: 'checkbox', checked: jobState === 'Failed', onchange: syncRerun });
+    boxes.set(job.name, box);
     jobs.append(
       el(
-        'button',
-        {
-          class: 'job-row',
-          onclick: () =>
-            openJobViewer({
-              pipeline,
-              counter: run.counter,
-              stage: stage.name,
-              stageCounter,
-              job: job.name,
-              live: isActive(status),
-            }),
-        },
-        icon('terminal', { size: 13 }),
-        el('span', { class: 'job-name truncate', text: job.name }),
-        statusPill(jobStatus(job)),
-        icon('chevron-right', { size: 13 }),
+        'div',
+        { class: 'job-row' },
+        el('label', { class: 'job-check', title: `Include ${job.name} in the next re-run` }, box),
+        open,
       ),
     );
   }
+
+  syncRerun();
 
   return el(
     'div',

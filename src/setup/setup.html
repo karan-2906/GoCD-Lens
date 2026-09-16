@@ -68,7 +68,10 @@
               <span class="auth-title">Personal access token</span>
               <span class="hint">
                 Survives session expiry and avoids GoCD's CSRF checks on actions like trigger and
-                pause. Create one under your GoCD profile &rarr; Personal Access Tokens.
+                pause. Create one under your GoCD profile &rarr; Personal Access Tokens. It is kept
+                on this machine, in storage no website and no other extension can read - but not
+                encrypted on disk, so anyone who can read this browser profile can read it. A token
+                can be revoked; prefer one over your password.
               </span>
             </span>
           </label>
@@ -77,7 +80,11 @@
             <input type="radio" name="auth" id="auth-basic" value="basic" />
             <span class="auth-body">
               <span class="auth-title">Username and password</span>
-              <span class="hint">For older servers that do not offer access tokens.</span>
+              <span class="hint">
+                For older servers that do not offer access tokens. Your password is kept the same
+                way a token is - on this machine, unencrypted on disk - and unlike a token it
+                cannot be revoked on its own. Use a token if your server supports one.
+              </span>
             </span>
           </label>
         </fieldset>

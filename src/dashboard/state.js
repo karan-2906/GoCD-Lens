@@ -8,7 +8,6 @@ import { el, send, toast, confirmDialog, explain, stageStrip } from '../common/u
 import {
   STATUS,
   pipelineStatus,
-  jobStatus,
   timeAgo,
   matchScore,
   fuzzyMatch,
@@ -294,99 +293,35 @@ export async function cancelStage({ pipeline, counter, stage, stageCounter }) {
  * re-running the whole stage burns agent time on eleven that already passed.
  * The failed jobs start ticked, because that is nearly always the answer.
  */
-export async function rerunStage({ pipeline, counter, stage, stageCounter, jobs = [] }) {
+/**
+ * The choice is made inline, on the job rows, so this only confirms it.
+ *
+ * `selected` is null when there was nothing to choose between -- one job, or a
+ * stage whose rows carry no checkboxes -- and an array of job names otherwise.
+ * Empty or complete both mean the whole stage: running every job is what
+ * "re-run the stage" means, and GoCD has its own operation for it rather than
+ * treating it as a selection that happens to include everything.
+ */
+export async function rerunStage({ pipeline, counter, stage, stageCounter, jobs = [], selected = null }) {
   const runnable = jobs.filter((job) => job?.name);
+  const picked = selected ?? [];
+  const whole = picked.length === 0 || picked.length === runnable.length;
 
-  // Nothing to choose between: keep the old single question.
-  if (runnable.length <= 1) {
-    const ok = await confirmDialog({
-      title: `Re-run ${stage}?`,
-      body: 'Every job in this stage runs again.',
-      confirmLabel: 'Re-run',
-    });
-    if (!ok) return;
-    return act(`Re-running ${stage}`, () =>
-      send('rerun', { pipeline, counter, stage, stageCounter }),
-    );
-  }
+  const named =
+    picked.length <= 3 ? picked.join(', ') : `${picked.length} of ${runnable.length} jobs`;
 
-  const failed = runnable.filter((job) => jobStatus(job) === 'Failed');
-  const checkboxes = new Map();
-
-  const list = el('div', { class: 'job-picker' });
-  for (const job of runnable) {
-    const status = jobStatus(job);
-    const box = el('input', {
-      type: 'checkbox',
-      checked: status === 'Failed',
-      onchange: () => updateFooter(),
-    });
-    checkboxes.set(job.name, box);
-    list.append(
-      el(
-        'label',
-        { class: 'job-pick' },
-        box,
-        el('span', { class: 'truncate', text: job.name }),
-        statusPill(status),
-      ),
-    );
-  }
-
-  const summary = el('span', { class: 'faint' });
-  const selectAll = el('button', {
-    type: 'button',
-    class: 'btn btn-sm btn-ghost',
-    text: 'Select all',
-    onclick: () => {
-      const turnOn = selected().length < runnable.length;
-      for (const box of checkboxes.values()) box.checked = turnOn;
-      updateFooter();
-    },
+  const ok = await confirmDialog({
+    title: whole ? `Re-run ${stage}?` : `Re-run ${picked.length === 1 ? 'this job' : 'these jobs'}?`,
+    body: whole
+      ? 'Every job in this stage runs again.'
+      : `${named} run again. The rest keep their existing result.`,
+    confirmLabel: whole ? 'Re-run' : 'Re-run selected',
   });
-
-  const selected = () => [...checkboxes.entries()].filter(([, box]) => box.checked).map(([name]) => name);
-
-  function updateFooter() {
-    const count = selected().length;
-    summary.textContent =
-      count === 0
-        ? 'Nothing selected'
-        : count === runnable.length
-          ? `All ${count} jobs -- the whole stage`
-          : `${count} of ${runnable.length} jobs`;
-    selectAll.textContent = count < runnable.length ? 'Select all' : 'Select none';
-  }
-  updateFooter();
-
-  const body = el(
-    'div',
-    {},
-    el('p', {
-      class: 'modal-body',
-      text: failed.length
-        ? `${failed.length} of these ${runnable.length} jobs failed, and are ticked. Jobs you leave unticked keep their existing result.`
-        : 'Pick the jobs to run again. The rest keep their existing result.',
-    }),
-    list,
-    el('div', { class: 'row', style: { marginTop: '10px' } }, summary, el('span', { class: 'spacer' }), selectAll),
-  );
-
-  const ok = await confirmDialog({ title: `Re-run jobs in ${stage}`, body, confirmLabel: 'Re-run selected' });
   if (!ok) return;
 
-  const chosen = selected();
-  if (chosen.length === 0) {
-    toast('No jobs were selected, so nothing was re-run.', { tone: 'warn' });
-    return;
-  }
-
-  // Running every job is what "re-run the stage" means, and GoCD handles that
-  // as its own operation rather than a selection of all of them.
-  const wholeStage = chosen.length === runnable.length;
-  const label = wholeStage
+  const label = whole
     ? `Re-running ${stage}`
-    : `Re-running ${chosen.length} job${chosen.length === 1 ? '' : 's'} in ${stage}`;
+    : `Re-running ${picked.length} job${picked.length === 1 ? '' : 's'} in ${stage}`;
 
   return act(label, () =>
     send('rerun', {
@@ -394,7 +329,7 @@ export async function rerunStage({ pipeline, counter, stage, stageCounter, jobs 
       counter,
       stage,
       stageCounter,
-      jobs: wholeStage ? undefined : chosen,
+      jobs: whole ? undefined : picked,
     }),
   );
 }

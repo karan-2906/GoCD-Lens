@@ -85,7 +85,8 @@ The whole thing follows your system theme, or you can pin it light or dark:
 - Stop a running stage
 - **Re-run chosen jobs.** A stage of a dozen parallel e2e jobs is normal, and
   re-running all of them to retry one flaky job wastes agents and minutes. The
-  re-run button lists the jobs with the failed ones already ticked
+  job rows carry a checkbox, with the failed ones already ticked, and the button
+  reads *Re-run selected (n)* until every job is picked -- which is the whole stage
 - Every one of these confirms first, and says what happened
 
 **Console logs**

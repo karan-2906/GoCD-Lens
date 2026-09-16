@@ -39,6 +39,20 @@ background service worker. The extension's own pages — the dashboard, the popu
 page — never receive it; the settings page can learn the last four characters of what is stored so
 you can tell two tokens apart, and nothing more.
 
+**It is not encrypted on disk.** `chrome.storage.local` is a file in your browser profile. No
+website can read it -- web pages have no access to extension storage at all -- and no other
+extension can read it either, because each extension gets its own isolated area. But it is not
+encrypted, so anything that can read your browser profile as your operating-system user can read
+the credential: malware running as you, another person at an unlocked machine, or an unencrypted
+backup. Browser extensions have no access to the operating system keychain, so there is no safer
+place to put it.
+
+That is why **Use my existing GoCD login** is the default and the recommended mode: it stores
+nothing, and rides a session cookie that Chrome does encrypt at rest. If you do store a
+credential, prefer a personal access token over your password -- a token can be revoked on its
+own.
+
+
 ---
 
 ## What the extension sends, and to whom

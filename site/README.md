@@ -76,15 +76,12 @@ grep -rl 'go-cd-lens.vercel.app' site/ | xargs sed -i '' 's|go-cd-lens.vercel.ap
   script, so it is unaffected, but this is the check that proves it.
 - **Search Console** — add the property and submit `sitemap.xml`.
 
-## When the Chrome Web Store listing goes live
+## The Chrome Web Store link
 
-Both **Add to Chrome** buttons currently point at a Chrome Web Store *search* for "GoCD Lens",
-which is a real URL but will not find the extension until it is listed. Each is marked with a
-comment:
+Both **Add to Chrome** buttons point at the listing:
 
-```sh
-grep -n 'STORE LINK' site/index.html
+```
+https://chromewebstore.google.com/detail/gocd-lens/hlpppcihkjhenaefanggabmhcmigppnd
 ```
 
-Swap both for the listing URL (`https://chromewebstore.google.com/detail/gocd-lens/<extension-id>`).
-Nothing else on the site needs to change.
+That is the extension's permanent ID, so the URL does not change between review and publication.
