@@ -304,6 +304,20 @@ refuses the commit if anything fails. It is worth the two seconds mostly for
 
 After editing, press the reload button on the extension's card in `chrome://extensions`.
 
+### The website
+
+[`site/`](site) is the landing page — one static HTML file, one stylesheet, no framework and no
+build step. `npm run site` regenerates its images, including the 1200×630 link-preview card, from
+the same fixture renderer the README screenshots use. [`site/README.md`](site/README.md) covers
+deploying it to Vercel and the one thing to change first: the canonical domain.
+
+### Publishing
+
+[`docs/PUBLISHING.md`](docs/PUBLISHING.md) is the full runbook — which distribution route to pick,
+the paste-ready store listing and permission justifications, and what reviewers question about
+this manifest in particular. `npm run store` regenerates the exact-size listing images.
+[`docs/PRIVACY.md`](docs/PRIVACY.md) is the privacy policy the Web Store requires you to host.
+
 ### Layout
 
 ```

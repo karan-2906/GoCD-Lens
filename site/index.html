@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>GoCD Lens — your GoCD pipelines, straight from the API</title>
+    <meta
+      name="description"
+      content="A browser extension that reads the GoCD REST API and draws its own dashboard, so it keeps working when the GoCD web UI doesn't. Nothing leaves your machine."
+    />
+    <link rel="canonical" href="https://gocd-lens.vercel.app/" />
+    <meta name="theme-color" content="#0d1117" />
+    <meta name="color-scheme" content="dark" />
+
+    <!-- Link previews: Slack, Teams, X, LinkedIn, iMessage. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="GoCD Lens" />
+    <meta property="og:url" content="https://gocd-lens.vercel.app/" />
+    <meta property="og:title" content="GoCD Lens — your GoCD pipelines, straight from the API" />
+    <meta
+      property="og:description"
+      content="Reads the same REST API your GoCD dashboard does and draws its own, so it keeps working when the web UI doesn't. No content scripts, no analytics, nothing synced."
+    />
+    <meta property="og:image" content="https://gocd-lens.vercel.app/img/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="GoCD Lens, beside a screenshot of its pipeline dashboard" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="GoCD Lens — your GoCD pipelines, straight from the API" />
+    <meta
+      name="twitter:description"
+      content="Reads the same REST API your GoCD dashboard does and draws its own, so it keeps working when the web UI doesn't."
+    />
+    <meta name="twitter:image" content="https://gocd-lens.vercel.app/img/og.png" />
+
+    <link rel="icon" href="/img/icon32.png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/img/icon128.png" />
+    <link rel="stylesheet" href="/styles.css" />
+
+    <!--
+      No web fonts, no analytics, no tag manager, no CDN. A landing page for an
+      extension that contacts exactly one host should not itself phone four.
+    -->
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "GoCD Lens",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Chrome 116+, Microsoft Edge, Brave",
+        "description": "A browser extension that reads GoCD pipelines from the GoCD REST API and draws its own dashboard, so it keeps working when the GoCD web UI does not. All data stays on the user's machine.",
+        "url": "https://gocd-lens.vercel.app/",
+        "softwareVersion": "1.0.0",
+        "license": "https://opensource.org/licenses/MIT",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "featureList": [
+          "Reads the GoCD REST API directly instead of the GoCD web UI",
+          "One request loads every pipeline group and its latest run",
+          "Per-stage status strip on every pipeline card",
+          "Fuzzy search across pipeline and group names",
+          "Notifications when a watched pipeline starts or finishes",
+          "Re-run selected jobs in a failed stage",
+          "Live console log tailing with search and download",
+          "Works from cache when the server or VPN is unreachable"
+        ]
+      }
+    </script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Does GoCD Lens work when the GoCD web UI is down?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "That is what it is for. GoCD's REST API and its web interface fail independently — in production we have seen the view lookup break and take the dashboard down with it while a plain API request answered perfectly. GoCD Lens only uses the API, and its built-in check probes the API and the web UI separately so you can tell which one is broken."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does it store my GoCD password or token?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Only if you choose token or password sign-in, and then only in chrome.storage.local on your own machine. The default mode rides the GoCD session your browser already has and stores nothing at all. chrome.storage.sync, which would upload to your Google account, is never used anywhere in the extension."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Will it put load on my GoCD server?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "One request per poll, not one per pipeline. Unchanged data costs an empty 304 because every poll sends the previous ETag. A hidden tab does not poll at all, several open tabs share one cache, and watching a pipeline adds no requests because notifications are computed from the dashboard payload the badge already needs."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does it work behind a VPN, a proxy or an internal certificate authority?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Requests are made from your machine over the same network stack as the GoCD tab beside it, and Chrome uses your OS trust store, so an internal CA works without configuration. If an SSO or auth proxy answers API requests with an HTML login page, switch to a personal access token, which carries its own credential and does not depend on cookies."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does it work in Microsoft Edge and Brave?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. It is a Manifest V3 extension requiring Chrome 116 or later, and Edge and Brave install Chrome Web Store extensions directly."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can it read the other pages I browse?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. GoCD Lens has no content scripts at all, and no tabs, cookies, webRequest, history or scripting permission. It ships with an empty host_permissions list and asks for access to one origin — your GoCD server — at the moment you press Connect."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is GoCD Lens affiliated with the GoCD project?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. It is an independent MIT-licensed tool that uses GoCD's public REST API. It is not affiliated with or endorsed by the GoCD project or ThoughtWorks."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is there a server component, or an account?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Neither. There is no backend, no account and no third party. The extension runs entirely in your browser and the only host it ever contacts is the GoCD server you name."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="nav">
+      <a class="brand" href="/">
+        <img src="/img/icon32.png" alt="" width="26" height="26" />
+        <span>GoCD Lens</span>
+      </a>
+      <nav aria-label="Primary">
+        <a href="#features">Features</a>
+        <a href="#load">Server load</a>
+        <a href="#privacy">Privacy</a>
+        <a href="#faq">FAQ</a>
+        <a class="nav-cta" href="https://github.com/karan-2906/GoCD-Lens">GitHub</a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <!-- ---------------------------------------------------------- hero -->
+      <section class="hero">
+        <p class="eyebrow">Chrome · Edge · Brave</p>
+        <h1>Your GoCD pipelines,<br /><span class="grad">straight from the API</span>.</h1>
+        <p class="lede">
+          GoCD's API keeps answering through server restarts, slow page loads and the dashboard's
+          habit of losing your pipelines. The web UI in front of it does not. GoCD Lens skips that
+          page entirely and draws its own — so what you see is whatever the server actually knows.
+        </p>
+        <div class="cta">
+          <a class="btn btn-primary" href="#install">Install it</a>
+          <a class="btn" href="https://github.com/karan-2906/GoCD-Lens">Read the source</a>
+        </div>
+        <ul class="badges">
+          <li>No content scripts</li>
+          <li>No analytics</li>
+          <li>Nothing synced to Google</li>
+          <li>MIT licensed</li>
+        </ul>
+
+        <figure class="shot shot-lead">
+          <img
+            src="/img/hero.png"
+            width="1280"
+            height="800"
+            alt="The GoCD Lens dashboard: filter chips for failing, running, starred, watching and paused, a sidebar of pipeline groups, and colour-coded pipeline cards each showing a per-stage strip"
+            fetchpriority="high"
+          />
+        </figure>
+      </section>
+
+      <!-- ------------------------------------------------------ features -->
+      <section id="features" class="band">
+        <h2>Built for six thousand pipelines and nine hundred failures</h2>
+        <p class="sub">
+          It was written against an instance that size. Everything below follows from it: nothing
+          here costs a request per pipeline, and no screen tries to draw them all.
+        </p>
+
+        <div class="grid">
+          <article class="card">
+            <h3>One request for the whole fleet</h3>
+            <p>
+              A single <code>/api/dashboard</code> call returns every group, pipeline, pause state
+              and latest run. There is no per-pipeline polling anywhere in the extension.
+            </p>
+          </article>
+          <article class="card">
+            <h3>See <em>where</em> it broke</h3>
+            <p>
+              Every card carries a segment per stage in pipeline order, so a red third segment tells
+              you it got through build and test and died in deploy — before you click anything.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Four letters is enough</h3>
+            <p>
+              Type <code>wabp</code> and get <code>web-app-build-prod</code>, with the matched
+              letters picked out. Searching six thousand names by substring is not a search.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Starring and watching are different</h3>
+            <p>
+              A star pins a pipeline to the top of every list. A bell interrupts you when it starts
+              and when it finishes. Wanting something in reach and wanting to be interrupted by it
+              are different wishes.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Re-run one flaky job</h3>
+            <p>
+              A stage of a dozen parallel end-to-end jobs is normal. The re-run button lists them
+              with the failed ones already ticked, instead of burning twelve agents to retry one.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Readable when the network isn't</h3>
+            <p>
+              The last payload is cached to disk. Drop the VPN and the dashboard still shows
+              yesterday's failure, with a banner saying so and when it was from.
+            </p>
+          </article>
+        </div>
+
+        <div class="two-up">
+          <figure class="shot">
+            <img
+              src="/img/search.png"
+              width="1280"
+              height="800"
+              loading="lazy"
+              alt="The search box containing wabp, showing one match, with the letters w, a, b and p highlighted inside web-app-build-prod"
+            />
+            <figcaption>Four letters, one match, the letters picked out.</figcaption>
+          </figure>
+          <figure class="shot">
+            <img
+              src="/img/dark.png"
+              width="1280"
+              height="800"
+              loading="lazy"
+              alt="The same pipeline dashboard rendered in dark mode"
+            />
+            <figcaption>Follows your system theme, or pin it light or dark.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <!-- ------------------------------------------------------ showcase -->
+      <section class="band alt">
+        <div class="split">
+          <div class="words">
+            <h2>Everything about one run, on one screen</h2>
+            <p>
+              Run history that pages as you scroll, the selected run's stages and jobs, manual
+              approval gates marked as gates rather than as failures — and underneath, what the run
+              was actually built from: repo, branch, commit, author, message, one click to the diff.
+            </p>
+            <p>
+              Chained pipelines show the upstream run that triggered them, one click away.
+            </p>
+          </div>
+          <figure class="shot">
+            <img
+              src="/img/pipeline.png"
+              width="1280"
+              height="800"
+              loading="lazy"
+              alt="A pipeline's detail view: run history down the left, the failed run's build, integration and deploy stages with their jobs on the right, and the commit that triggered it below"
+            />
+          </figure>
+        </div>
+
+        <div class="split reverse">
+          <div class="words">
+            <h2>Console logs, tailed</h2>
+            <p>
+              Live while the job runs, fetching only the lines added since the last poll. Severity
+              colouring, search with next and previous, wrapping, download the whole thing, and the
+              artifact tree behind the second tab.
+            </p>
+            <p class="note">
+              Build logs are the least trustworthy data in the product, so nothing in this extension
+              ever assigns markup — every line reaches the screen as a text node.
+            </p>
+          </div>
+          <figure class="shot">
+            <img
+              src="/img/console.png"
+              width="1280"
+              height="800"
+              loading="lazy"
+              alt="A job's console log with per-line timestamps, a red assertion failure, an amber deprecation warning and the GoCD agent's own lines in grey"
+            />
+          </figure>
+        </div>
+
+        <div class="split">
+          <div class="words">
+            <h2>A glance from the toolbar</h2>
+            <p>
+              The badge counts what is <strong>running</strong>, because that is the thing that
+              changes. With nothing running it turns red and counts failures. An amber
+              <code>!</code> means it is showing cached data because GoCD is unreachable.
+            </p>
+            <p>
+              The popup gives you the same view picker, what is running now, then everything else —
+              sixteen rows at a time.
+            </p>
+          </div>
+          <figure class="shot shot-narrow">
+            <img
+              src="/img/popup.png"
+              width="400"
+              height="600"
+              loading="lazy"
+              alt="The toolbar popup showing counts for failing, running and green pipelines, then a list of the pipelines running now"
+            />
+          </figure>
+        </div>
+      </section>
+
+      <!-- ---------------------------------------------------------- load -->
+      <section id="load" class="band">
+        <h2>What it costs your GoCD server</h2>
+        <p class="sub">
+          Worth being explicit about, because a dashboard everyone leaves open can quietly become a
+          load problem.
+        </p>
+        <div class="stats">
+          <div class="stat">
+            <strong>1</strong><span>request per poll, whatever the fleet size</span>
+          </div>
+          <div class="stat"><strong>304</strong><span>on unchanged data — every poll sends the last ETag</span></div>
+          <div class="stat"><strong>0</strong><span>extra requests to watch a pipeline</span></div>
+          <div class="stat"><strong>0</strong><span>polls from a tab you are not looking at</span></div>
+        </div>
+        <p class="footnote">
+          A view narrows the payload at the server, which on a large instance is the difference
+          between megabytes and kilobytes per poll. Several tabs and the popup share one cache, so
+          three open tabs make one request, not three. Unattended background checking ships
+          <strong>off</strong>: traffic with nobody watching deserves an explicit yes.
+        </p>
+      </section>
+
+      <!-- ------------------------------------------------------- privacy -->
+      <section id="privacy" class="band alt">
+        <h2>Everything stays on your machine</h2>
+        <p class="sub">
+          The extension can reach exactly one host: the one you named. These are not slogans —
+          <a href="https://github.com/karan-2906/GoCD-Lens/blob/main/tests/package-integrity.test.mjs"
+            >a test enforces each of them against the actual files</a
+          >.
+        </p>
+        <ul class="checks">
+          <li>
+            <strong>Nothing leaves this computer.</strong> Settings, stars and the cached pipeline
+            list go in <code>chrome.storage.local</code>. <code>chrome.storage.sync</code> — which
+            uploads to Google and copies to every machine on your account — is never used anywhere.
+          </li>
+          <li>
+            <strong>No site access up front.</strong> <code>host_permissions</code> is an empty
+            list. Access to one origin is granted at the moment you press Connect.
+          </li>
+          <li>
+            <strong>No content scripts.</strong> The extension cannot read, see or touch any page
+            you browse. It has no <code>tabs</code>, <code>cookies</code>, <code>webRequest</code>,
+            <code>history</code> or <code>scripting</code> permission either.
+          </li>
+          <li>
+            <strong>The credential never reaches a page.</strong> It lives in the background worker,
+            which makes every request. The dashboard receives pipeline data only.
+          </li>
+          <li>
+            <strong>No remote code, no analytics, no third parties.</strong> Every script, style,
+            icon and sound ships inside the extension, and the CSP blocks inline and remote script.
+          </li>
+        </ul>
+        <p class="footnote">
+          Three ways to sign in, starting with the session your browser already has — which stores
+          nothing at all. Read the full
+          <a href="https://github.com/karan-2906/GoCD-Lens/blob/main/docs/PRIVACY.md">privacy policy</a>.
+        </p>
+      </section>
+
+      <!-- ------------------------------------------------------- install -->
+      <section id="install" class="band">
+        <h2>Install it</h2>
+
+        <!--
+          When the Chrome Web Store listing is live, replace this block with:
+          <a class="btn btn-primary btn-lg" href="https://chromewebstore.google.com/detail/gocd-lens/EXTENSION_ID">Add to Chrome</a>
+          and move the unpacked steps into a <details>.
+        -->
+        <p class="sub">
+          Not on the Chrome Web Store yet. Until it is, load it from disk — there is no build step,
+          no npm install and no bundler, so the folder you clone is the thing that runs.
+        </p>
+
+        <ol class="steps">
+          <li>
+            <code>git clone https://github.com/karan-2906/GoCD-Lens.git</code>
+          </li>
+          <li>Open <code>chrome://extensions</code></li>
+          <li>Turn on <strong>Developer mode</strong>, top right</li>
+          <li>Click <strong>Load unpacked</strong> and pick the folder you cloned</li>
+          <li>
+            The setup page opens. Enter the GoCD address you normally use — usually ending in
+            <code>/go</code> — and press Connect.
+          </li>
+        </ol>
+
+        <p class="footnote">
+          Setup verifies the credential against your server <em>before</em> saving it, so a typo or
+          a blocked session surfaces there and then rather than as a mysteriously empty dashboard
+          later. Rolling it out to a team is covered in
+          <a href="https://github.com/karan-2906/GoCD-Lens/blob/main/docs/PUBLISHING.md">PUBLISHING.md</a>.
+        </p>
+      </section>
+
+      <!-- ----------------------------------------------------------- faq -->
+      <section id="faq" class="band alt">
+        <h2>Questions people ask</h2>
+
+        <details>
+          <summary>Does it work when the GoCD web UI is down?</summary>
+          <p>
+            That is what it is for. The API and the web interface fail independently — we have
+            watched GoCD's view lookup break and take the dashboard down with it while a plain
+            <code>/api/dashboard</code> request answered perfectly. GoCD Lens only uses the API, and
+            its <em>"is it GoCD, or is it me?"</em> check probes the API and the web UI separately
+            and times both, so you can tell which one is actually broken.
+          </p>
+        </details>
+
+        <details>
+          <summary>Does it store my GoCD password or token?</summary>
+          <p>
+            Only if you pick token or password sign-in, and then only in
+            <code>chrome.storage.local</code> on your own machine. The default mode rides the GoCD
+            session your browser already has and stores nothing at all. The settings page can learn
+            the last four characters of what is stored — enough to tell two tokens apart — and
+            nothing more.
+          </p>
+        </details>
+
+        <details>
+          <summary>Will it put load on my GoCD server?</summary>
+          <p>
+            One request per poll, not one per pipeline. Unchanged data costs an empty 304, a hidden
+            tab does not poll at all, several tabs share one cache, and watching a pipeline adds no
+            requests at all. For comparison: GoCD's own dashboard polls with two requests per cycle;
+            this makes one.
+          </p>
+        </details>
+
+        <details>
+          <summary>Does it work behind a VPN, a proxy, or an internal CA?</summary>
+          <p>
+            Yes. Requests are made from your machine over the same network stack as the GoCD tab
+            beside it, and Chrome uses your OS trust store, so an internal certificate authority
+            just works. If the VPN drops, requests fail in seconds rather than hanging and the
+            dashboard keeps showing the last data it loaded. The one setup that can bite is an SSO
+            or auth proxy that answers API requests with an HTML login page — switch to a personal
+            access token, which carries its own credential and does not depend on cookies.
+          </p>
+        </details>
+
+        <details>
+          <summary>Does it work in Edge and Brave?</summary>
+          <p>
+            Yes. It is a Manifest V3 extension needing Chrome 116 or later, and both install Chrome
+            Web Store extensions directly. Text in the extension says "browser", not "Chrome", for
+            that reason.
+          </p>
+        </details>
+
+        <details>
+          <summary>Can it read the other pages I browse?</summary>
+          <p>
+            No. There are no content scripts at all, and no <code>tabs</code>,
+            <code>cookies</code>, <code>webRequest</code>, <code>history</code> or
+            <code>scripting</code> permission. It ships unable to reach any site until you name your
+            server.
+          </p>
+        </details>
+
+        <details>
+          <summary>Is this affiliated with GoCD?</summary>
+          <p>
+            No. It is an independent, MIT-licensed tool built on GoCD's public REST API, not
+            affiliated with or endorsed by the GoCD project or ThoughtWorks. It is a browser version
+            of <a href="https://github.com/Sahilll15/lazygocd">lazygocd</a>, a terminal UI for the
+            same problem, and follows its endpoint choices.
+          </p>
+        </details>
+
+        <details>
+          <summary>Is there a server, or an account?</summary>
+          <p>
+            Neither. No backend, no account, no third party, no sign-up. It runs entirely in your
+            browser, and the only host it contacts is your GoCD server.
+          </p>
+        </details>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <div class="foot-grid">
+        <div>
+          <a class="brand" href="/">
+            <img src="/img/icon32.png" alt="" width="22" height="22" />
+            <span>GoCD Lens</span>
+          </a>
+          <p class="foot-note">Your GoCD pipelines, straight from the API.</p>
+        </div>
+        <nav aria-label="Footer">
+          <h3>Project</h3>
+          <a href="https://github.com/karan-2906/GoCD-Lens">Source</a>
+          <a href="https://github.com/karan-2906/GoCD-Lens/issues">Issues</a>
+          <a href="https://github.com/karan-2906/GoCD-Lens/blob/main/docs/PRIVACY.md">Privacy policy</a>
+        </nav>
+        <nav aria-label="Related">
+          <h3>Related</h3>
+          <a href="https://www.gocd.org/">GoCD</a>
+          <a href="https://github.com/Sahilll15/lazygocd">lazygocd</a>
+          <a href="https://lazygocd.vercel.app/">lazygocd site</a>
+        </nav>
+      </div>
+      <p class="copy">
+        MIT licensed. Not affiliated with the GoCD project or ThoughtWorks. The pipelines in the
+        screenshots are invented.
+      </p>
+    </footer>
+  </body>
+</html>

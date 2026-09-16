@@ -279,6 +279,10 @@ several rounds of this session were spent removing explanation that repeated the
 label above it. User-facing text says "browser", not "Chrome" — this runs on
 Edge and Brave too, and `browserIdentity()` detects which for OS instructions.
 
+**Commits carry no AI attribution.** No `Co-Authored-By: Claude` trailer, no
+"Generated with Claude Code" line, in commit messages or PR descriptions — this
+is a personal profile and the history should read as one author's.
+
 ---
 
 ## Unverified

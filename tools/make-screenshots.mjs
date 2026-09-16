@@ -33,7 +33,9 @@ import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const OUT = join(ROOT, 'docs', 'screenshots');
+const SHOTS_DIR = join(ROOT, 'docs', 'screenshots');
+const STORE_DIR = join(ROOT, 'docs', 'store');
+const SITE_DIR = join(ROOT, 'site', 'img');
 
 const CHROME =
   process.env.CHROME_PATH ||
@@ -399,6 +401,131 @@ const waitFor = (selector, body) => `
   })(0);
 `;
 
+/**
+ * The promo tiles the Chrome Web Store asks for, at the sizes it demands. Built
+ * from the extension's own tokens rather than a design tool, so the tile cannot
+ * drift away from what the product looks like.
+ */
+function promoTile({ width, height, shot }) {
+  const wide = width > 800;
+  return `<!doctype html>
+<html><head><meta charset="utf-8"><style>
+  :root {
+    --bg: #0d1117; --surface: #161b22; --border: #262c36;
+    --text: #e6edf3; --muted: #8b949e;
+    --accent: #4d8bf5; --pass: #3fb950; --fail: #f85149; --build: #58a6ff;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: ${width}px; height: ${height}px; overflow: hidden;
+    background: radial-gradient(120% 140% at 0% 0%, #1b2330 0%, var(--bg) 55%);
+    color: var(--text); font-family: var(--font);
+    display: flex; align-items: center; gap: ${wide ? 56 : 0}px;
+    padding: ${wide ? '0 72px' : '0'};
+    ${wide ? '' : 'flex-direction: column; justify-content: center; text-align: center;'}
+  }
+  .words { flex: ${wide ? '0 0 460px' : 'none'}; }
+  .brand { display: flex; align-items: center; gap: 14px; ${wide ? '' : 'justify-content: center;'} }
+  .brand img { width: ${wide ? 56 : 44}px; height: ${wide ? 56 : 44}px; border-radius: 12px; }
+  .brand h1 { font-size: ${wide ? 44 : 32}px; letter-spacing: -0.02em; font-weight: 700; }
+  .tag {
+    margin-top: ${wide ? 20 : 14}px; font-size: ${wide ? 21 : 15}px; line-height: 1.45;
+    color: var(--muted); max-width: ${wide ? 460 : 340}px; ${wide ? '' : 'margin-left: auto; margin-right: auto;'}
+  }
+  .tag b { color: var(--text); font-weight: 600; }
+  .strip { display: flex; gap: 6px; margin-top: ${wide ? 28 : 20}px; ${wide ? '' : 'justify-content: center;'} }
+  .seg { height: 6px; width: ${wide ? 64 : 44}px; border-radius: 3px; }
+  .shot {
+    flex: 1; height: ${height - 96}px; border-radius: 14px; overflow: hidden;
+    border: 1px solid var(--border); box-shadow: 0 24px 60px rgba(0,0,0,0.45);
+  }
+  .shot img { width: 1360px; margin: -1px 0 0 -1px; display: block; }
+</style></head>
+<body>
+  <div class="words">
+    <div class="brand">
+      <img src="../../icons/icon128.png" alt="">
+      <h1>GoCD Lens</h1>
+    </div>
+    <p class="tag">Your GoCD pipelines, straight from the API &mdash; <b>still there when the GoCD web UI isn't</b>.</p>
+    <div class="strip">
+      <div class="seg" style="background: var(--pass)"></div>
+      <div class="seg" style="background: var(--pass)"></div>
+      <div class="seg" style="background: var(--fail)"></div>
+      <div class="seg" style="background: var(--build)"></div>
+    </div>
+  </div>
+  ${shot ? `<div class="shot"><img src="/docs/screenshots/${shot}" alt=""></div>` : ''}
+</body></html>`;
+}
+
+/** Store assets: exact pixel sizes, 1x, because the store rejects anything else. */
+const STORE = [
+  { name: 'store-dashboard', page: 'src/dashboard/dashboard.html', width: 1280, height: 800 },
+  {
+    name: 'store-pipeline',
+    page: 'src/dashboard/dashboard.html',
+    width: 1280,
+    height: 800,
+    driver: waitFor('.card-p', 'el.click();'),
+  },
+  {
+    name: 'store-console',
+    page: 'src/dashboard/dashboard.html',
+    width: 1280,
+    height: 800,
+    driver: waitFor('.card-p', `
+      el.click();
+      ${waitForText('.job-row', 'api-tests', 'el.click();')}
+    `),
+  },
+  { name: 'store-dark', page: 'src/dashboard/dashboard.html', width: 1280, height: 800, theme: 'dark' },
+  { name: 'store-settings', page: 'src/setup/setup.html', width: 1280, height: 800 },
+  { name: 'promo-small', promo: true, width: 440, height: 280 },
+  { name: 'promo-marquee', promo: true, width: 1400, height: 560, shot: 'dashboard-dark.png' },
+];
+
+/**
+ * What the marketing site serves. Smaller than the README's shots on purpose --
+ * a landing page that ships two megabytes of PNG is a landing page nobody waits
+ * for -- and it includes the 1200x630 card that link previews and search results
+ * use.
+ */
+const SITE = [
+  { name: 'hero', page: 'src/dashboard/dashboard.html', width: 1280, height: 800, scale: 2 },
+  { name: 'dark', page: 'src/dashboard/dashboard.html', width: 1280, height: 800, theme: 'dark' },
+  {
+    name: 'pipeline',
+    page: 'src/dashboard/dashboard.html',
+    width: 1280,
+    height: 800,
+    driver: waitFor('.card-p', 'el.click();'),
+  },
+  {
+    name: 'console',
+    page: 'src/dashboard/dashboard.html',
+    width: 1280,
+    height: 800,
+    driver: waitFor('.card-p', `
+      el.click();
+      ${waitForText('.job-row', 'api-tests', 'el.click();')}
+    `),
+  },
+  {
+    name: 'search',
+    page: 'src/dashboard/dashboard.html',
+    width: 1280,
+    height: 800,
+    driver: waitFor('#search', `
+      el.value = 'wabp';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    `),
+  },
+  { name: 'popup', page: 'src/popup/popup.html', width: 400, height: 600, scale: 2 },
+  { name: 'og', promo: true, width: 1200, height: 630, shot: 'dashboard-dark.png' },
+];
+
 const SHOTS = [
   {
     name: 'dashboard',
@@ -486,9 +613,19 @@ async function serve(shots) {
     // every relative URL in the file -- ../common/base.css stops resolving and
     // the screenshot comes out as unstyled HTML.
     const shotName = url.searchParams.get('shot');
+    const promoName = url.searchParams.get('promo');
 
-    if (process.env.SHOT_DEBUG) console.error('REQ', req.url, JSON.stringify(req.headers.accept || '').slice(0,60));
+    if (process.env.SHOT_DEBUG) console.error('REQ', req.url);
     try {
+      // A promo tile has no file on disk; it is composed from the tokens here.
+      if (promoName) {
+        const tile = byName.get(promoName);
+        if (!tile) throw new Error(`no promo ${promoName}`);
+        res.writeHead(200, { 'Content-Type': MIME['.html'] });
+        res.end(promoTile(tile));
+        return;
+      }
+
       if (shotName) {
         const shot = byName.get(shotName);
         if (!shot) throw new Error(`no shot ${shotName}`);
@@ -521,12 +658,12 @@ async function serve(shots) {
 
 // ------------------------------------------------------------------- chrome
 
-function capture({ url, out, width, height, profile }) {
+function capture({ url, out, width, height, profile, scale = 2 }) {
   const args = [
     '--headless=new',
     '--disable-gpu',
     '--hide-scrollbars',
-    '--force-device-scale-factor=2',
+    `--force-device-scale-factor=${scale}`,
     `--user-data-dir=${profile}`,
     `--window-size=${width},${height}`,
     '--virtual-time-budget=6000',
@@ -573,33 +710,51 @@ function capture({ url, out, width, height, profile }) {
 
 // --------------------------------------------------------------------- main
 
-const only = process.argv.includes('--only')
-  ? process.argv[process.argv.indexOf('--only') + 1]
-  : null;
-const shots = only ? SHOTS.filter((s) => s.name === only) : SHOTS;
+const arg = (flag) =>
+  process.argv.includes(flag) ? process.argv[process.argv.indexOf(flag) + 1] : null;
 
-await mkdir(OUT, { recursive: true });
+// The store wants exact pixel sizes at 1x and rejects anything else; the README
+// wants 2x, because it is read on retina screens.
+const store = process.argv.includes('--store');
+const site = process.argv.includes('--site');
+const all = store ? STORE : site ? SITE : SHOTS;
+const dir = store ? STORE_DIR : site ? SITE_DIR : SHOTS_DIR;
+const scale = store ? 1 : site ? 1 : 2;
+
+const only = arg('--only');
+const shots = only ? all.filter((s) => s.name === only) : all;
+if (shots.length === 0) {
+  console.error(only ? `No shot named ${only}.` : 'Nothing to do.');
+  process.exit(1);
+}
+
+await mkdir(dir, { recursive: true });
 const profile = join(tmpdir(), `gocd-lens-shots-${process.pid}`);
-const { server, port } = await serve(SHOTS);
+const { server, port } = await serve([...SHOTS, ...STORE, ...SITE]);
+
+const urlFor = (shot) =>
+  shot.promo
+    ? `http://127.0.0.1:${port}/docs/store/promo.html?promo=${shot.name}`
+    : `http://127.0.0.1:${port}/${shot.page}?shot=${shot.name}`;
 
 // Opening one of these in a real browser is the only way to see what the camera
 // sees while a driver is being written.
 if (process.env.SHOT_SERVE) {
-  for (const shot of SHOTS) {
-    console.log(`  ${shot.name.padEnd(16)} http://127.0.0.1:${port}/${shot.page}?shot=${shot.name}`);
+  for (const shot of [...SHOTS, ...STORE, ...SITE]) {
+    console.log(`  ${shot.name.padEnd(18)} ${urlFor(shot)}`);
   }
   await new Promise(() => {});
 }
 
 try {
   for (const shot of shots) {
-    const out = join(OUT, `${shot.name}.png`);
     await capture({
-      url: `http://127.0.0.1:${port}/${shot.page}?shot=${shot.name}`,
-      out,
+      url: urlFor(shot),
+      out: join(dir, `${shot.name}.png`),
       width: shot.width,
       height: shot.height,
       profile,
+      scale: shot.scale ?? scale,
     });
     console.log(`  ${shot.name}.png  ${shot.width}x${shot.height}`);
   }
@@ -608,4 +763,5 @@ try {
   if (!process.argv.includes('--keep')) await rm(profile, { recursive: true, force: true });
 }
 
-console.log(`\nWrote ${shots.length} screenshot(s) to docs/screenshots/`);
+const where = store ? 'docs/store' : site ? 'site/img' : 'docs/screenshots';
+console.log(`\nWrote ${shots.length} image(s) to ${where}/`);

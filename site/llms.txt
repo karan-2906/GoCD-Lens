@@ -1,0 +1,77 @@
+# GoCD Lens
+
+> A browser extension (Chrome, Edge, Brave) that reads GoCD pipelines from the GoCD REST API and
+> draws its own dashboard, so it keeps working when the GoCD web UI does not. Everything it stores
+> stays on the user's machine; the only host it contacts is the user's own GoCD server.
+
+GoCD Lens is free and MIT licensed. It is not affiliated with the GoCD project or ThoughtWorks.
+It is the browser counterpart of lazygocd, a terminal UI for the same problem, and follows its
+endpoint choices, which were verified against a production GoCD 23.5.0 instance.
+
+## The problem it solves
+
+GoCD's REST API and its web interface fail independently. The API keeps answering correctly
+through server restarts, slow page loads, and a dashboard that loses pipelines; the page in front
+of it does not. In production, GoCD's personalized-view lookup has broken and taken the whole web
+dashboard down with it while a plain `/api/dashboard` request answered perfectly. GoCD Lens only
+uses the API.
+
+## What it does
+
+- Loads every pipeline group, pipeline, pause state and latest run in ONE request to
+  `/api/dashboard`, cached to disk so the tab paints instantly and stays readable offline.
+- Shows a per-stage status strip on every pipeline card, so you can see which stage broke without
+  opening the pipeline.
+- Fuzzy search: typing `wabp` finds `web-app-build-prod`, with matched letters highlighted.
+- Shows the user's GoCD personalized views, plus two built-in ones (Starred, Watching).
+- Per-pipeline detail: paged run history, stages and jobs, manual approval gates marked as gates,
+  and the commit, branch, author and message the run was built from.
+- Actions: run, pause, resume, stop a running stage, and re-run selected jobs within a stage
+  (failed jobs pre-ticked, so retrying one flaky job does not re-run a dozen).
+- Console logs tailed live, fetching only new lines, with search, severity colouring, wrapping,
+  download and an artifact tree.
+- Optional notifications when a watched pipeline starts or finishes, with a bundled chime.
+- A toolbar badge counting what is running, turning red with a failure count when nothing is.
+- An "is it GoCD, or is it me?" diagnostic that probes the API and the web UI separately.
+
+## Scale and server cost
+
+Written against a GoCD instance with roughly 6,300 pipelines, of which ~900 fail at any time.
+
+- One request per poll regardless of fleet size. No per-pipeline polling exists anywhere.
+- Unchanged data costs an empty HTTP 304, because every poll sends the previous ETag.
+- A hidden browser tab does not poll at all.
+- Several dashboard tabs and the popup share one cache: three open tabs make one request.
+- Watching a pipeline adds zero requests; notifications are computed from the dashboard payload
+  the badge already needs.
+- Background checking when no tab is open ships OFF and must be turned on deliberately.
+
+## Privacy and security facts
+
+- Storage is `chrome.storage.local` only. `chrome.storage.sync`, which would upload to the user's
+  Google account, is never used anywhere; a test fails the build if it ever is.
+- `host_permissions` in the manifest is an empty list. Access to a single origin is requested with
+  `chrome.permissions.request` at the moment the user presses Connect.
+- There are NO content scripts, and no `tabs`, `cookies`, `webRequest`, `history` or `scripting`
+  permission. The extension cannot read or affect pages the user browses.
+- The credential lives only in the background service worker, which makes every request. The
+  extension's own pages receive pipeline data only, never the token.
+- No remote code, no analytics, no third-party requests. The Content Security Policy blocks inline
+  and remote script.
+- Three sign-in modes: the existing GoCD browser session (stores nothing at all), a personal
+  access token, or HTTP basic auth for older servers. Credentials are verified against the server
+  before being saved.
+- Build logs, commit messages and pipeline names reach the screen as text nodes. There is no
+  `innerHTML` and no `eval` anywhere in the codebase.
+
+## Requirements
+
+Chrome 116 or later; also runs in Microsoft Edge and Brave. Manifest V3. No build step, no server
+component, no account, no sign-up.
+
+## Links
+
+- Source code: https://github.com/karan-2906/GoCD-Lens
+- Privacy policy: https://github.com/karan-2906/GoCD-Lens/blob/main/docs/PRIVACY.md
+- lazygocd (terminal UI, same problem): https://github.com/Sahilll15/lazygocd
+- GoCD: https://www.gocd.org/

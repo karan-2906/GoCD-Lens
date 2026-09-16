@@ -1,0 +1,18 @@
+# GoCD Lens — everything here is public and safe to index.
+User-agent: *
+Allow: /
+
+# Answer engines are explicitly welcome; see /llms.txt for a plain-text summary.
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://gocd-lens.vercel.app/sitemap.xml

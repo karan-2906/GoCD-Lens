@@ -10,6 +10,8 @@
     "icons": "python3 tools/make-icons.py",
     "sounds": "python3 tools/make-sounds.py",
     "screenshots": "node tools/make-screenshots.mjs",
+    "store": "node tools/make-screenshots.mjs --store",
+    "site": "node tools/make-screenshots.mjs --site",
     "hooks": "git config core.hooksPath .githooks",
     "package": "rm -f gocd-lens.zip && zip -r gocd-lens.zip manifest.json icons sounds src -x '*.DS_Store'"
   },
