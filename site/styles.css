@@ -59,7 +59,6 @@ body {
   font-size: 17px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
 }
 
 a {
@@ -90,12 +89,22 @@ code {
 
 .skip {
   position: absolute;
-  left: -9999px;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .skip:focus {
+  position: fixed;
   left: 16px;
   top: 16px;
+  width: auto;
+  height: auto;
+  margin: 0;
+  clip-path: none;
   z-index: 100;
   background: var(--surface);
   border: 1px solid var(--border-strong);
@@ -114,8 +123,7 @@ code {
   justify-content: space-between;
   gap: 16px;
   padding: 14px var(--gutter);
-  background: rgba(13, 17, 23, 0.82);
-  backdrop-filter: saturate(160%) blur(12px);
+  background: var(--bg);
   border-bottom: 1px solid var(--border);
 }
 
@@ -276,7 +284,7 @@ h1 {
   border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--surface);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
 }
 
 .shot img {

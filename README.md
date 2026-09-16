@@ -370,4 +370,4 @@ lazygocd's, which are verified against a large production GoCD instance.
 
 ## License
 
-MIT
+[MIT](LICENSE). Copyright (c) 2026 Karan Gandhi.
