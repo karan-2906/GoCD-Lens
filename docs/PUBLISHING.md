@@ -193,19 +193,18 @@ Then tick all three certifications; each is true here:
 - I do not use or transfer user data for purposes unrelated to my item's single purpose
 - I do not use or transfer user data to determine creditworthiness or for lending purposes
 
-**Privacy policy URL** — required, and it must be publicly reachable without a login. Options:
+**Privacy policy URL** — required, and it must be publicly reachable without a login.
 
-1. **GitHub Pages** (cleanest): enable Pages on the repo, and link
-   `https://<user>.github.io/GoCD-Lens/PRIVACY` (or whatever path Pages serves `docs/PRIVACY.md` at).
-2. **The raw file on a public repo**:
-   `https://github.com/<user>/GoCD-Lens/blob/main/docs/PRIVACY.md`. Acceptable, and the fastest.
-3. Any page on your own domain with the same text.
+Use the landing page's own copy: **`https://gocd-lens.vercel.app/privacy`** (substitute your real
+domain). It is [`site/privacy.html`](../site/privacy.html), it deploys with the site, and it does
+not depend on the source repository being public.
 
-> If the repository is private, option 2 will not work — reviewers must be able to open the URL
-> anonymously. Use Pages on a public repo, or host the text somewhere else.
+> The repository is currently **private**, so a `github.com/.../blob/...` URL returns 404 to a
+> reviewer and would get the submission rejected. Deploy the site first, confirm the `/privacy`
+> URL opens in a private browser window, and only then submit.
 
-The policy text is ready in [`PRIVACY.md`](PRIVACY.md). **Fill in the contact email placeholder at
-the bottom before publishing it.**
+[`PRIVACY.md`](PRIVACY.md) holds the same text for people reading the repository. **Both copies
+have a contact-email placeholder — fill in both before publishing.**
 
 ### 3.5 Distribution tab
 

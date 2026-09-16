@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Privacy Policy — GoCD Lens</title>
+    <meta
+      name="description"
+      content="GoCD Lens collects nothing. Everything it stores stays in your browser profile, and the only host it contacts is the GoCD server you name."
+    />
+    <link rel="canonical" href="https://gocd-lens.vercel.app/privacy" />
+    <meta name="theme-color" content="#0d1117" />
+    <meta name="color-scheme" content="dark" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="GoCD Lens" />
+    <meta property="og:url" content="https://gocd-lens.vercel.app/privacy" />
+    <meta property="og:title" content="Privacy Policy — GoCD Lens" />
+    <meta
+      property="og:description"
+      content="GoCD Lens collects nothing. Everything it stores stays in your browser profile, and the only host it contacts is the GoCD server you name."
+    />
+    <meta property="og:image" content="https://gocd-lens.vercel.app/img/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Privacy Policy — GoCD Lens" />
+    <meta name="twitter:image" content="https://gocd-lens.vercel.app/img/og.png" />
+
+    <link rel="icon" href="/img/icon32.png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/img/icon128.png" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="nav">
+      <a class="brand" href="/">
+        <img src="/img/icon32.png" alt="" width="26" height="26" />
+        <span>GoCD Lens</span>
+      </a>
+      <nav aria-label="Primary">
+        <a href="/#features">Features</a>
+        <a href="/#privacy">Privacy</a>
+        <a href="/#faq">FAQ</a>
+        <a class="nav-cta" href="/#install">Install</a>
+      </nav>
+    </header>
+
+    <main id="main" class="prose">
+      <h1>Privacy Policy</h1>
+      <p class="updated">Last updated: 17 September 2026</p>
+
+      <p class="lead">
+        GoCD Lens is a browser extension that shows you your own GoCD pipelines. It is built so that
+        there is nothing to collect: no server, no account, and no third parties.
+      </p>
+      <p class="lead">
+        <strong>The developer of GoCD Lens receives no data from you of any kind.</strong> There is
+        no analytics, no telemetry, no crash reporting and no "anonymous usage statistics".
+      </p>
+
+      <h2>What the extension stores, and where</h2>
+      <p>
+        Everything below is stored in <code>chrome.storage.local</code> — a file inside your own
+        browser profile, on your own machine. It is never uploaded anywhere.
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>What</th>
+            <th>Why it is kept</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Your GoCD server URL</td>
+            <td>It is the one address the extension is allowed to contact</td>
+          </tr>
+          <tr>
+            <td>Your sign-in choice</td>
+            <td>To know whether to use your existing session, a token, or basic auth</td>
+          </tr>
+          <tr>
+            <td>A personal access token or password, <em>only if you choose one of those modes</em></td>
+            <td>It is sent to your GoCD server to authenticate your own requests</td>
+          </tr>
+          <tr>
+            <td>Display settings — refresh interval, theme, density, notification and badge preferences</td>
+            <td>To keep the extension the way you set it</td>
+          </tr>
+          <tr>
+            <td>The names of pipelines you star or watch</td>
+            <td>To pin them, and to notify you about them</td>
+          </tr>
+          <tr>
+            <td>The most recent dashboard response from your server</td>
+            <td>So the tab paints instantly, and still shows something when the server or VPN is down</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        <strong><code>chrome.storage.sync</code> is never used anywhere in this extension.</strong>
+        That is the storage area that would copy data to your Google account and to every other
+        machine you are signed in on. A test in the source tree fails the build if any code ever
+        references it.
+      </p>
+
+      <h3>The credential in particular</h3>
+      <p>
+        If you pick <strong>Use my existing GoCD login</strong>, nothing is stored at all — the
+        extension rides the session cookie your browser already has.
+      </p>
+      <p>
+        If you pick a token or a password, it is stored locally and used for one purpose: the
+        <code>Authorization</code> header on requests to the GoCD server you named. It is held only
+        by the extension's background service worker. The extension's own pages — the dashboard, the
+        popup, the settings page — never receive it. The settings page can learn the last four
+        characters of what is stored, so you can tell two tokens apart, and nothing more.
+      </p>
+
+      <h2>What the extension sends, and to whom</h2>
+      <p>
+        <strong>The only host GoCD Lens ever contacts is the GoCD server you name.</strong> No
+        exceptions, and nothing is relayed through any intermediary.
+      </p>
+      <p>
+        Requests go to that server's REST API and its artifact and console-log endpoints, carrying
+        whatever credential you configured. This is the same traffic your browser would make if you
+        used GoCD's own web interface.
+      </p>
+      <p>
+        The extension loads no remote code. Every script, stylesheet, icon and sound ships inside the
+        package, and its Content Security Policy blocks inline and remote script. Nothing is fetched
+        from a CDN.
+      </p>
+
+      <h2>Permissions, and why each one exists</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Permission</th>
+            <th>What it is for</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>storage</code></td><td>The local storage described above</td></tr>
+          <tr>
+            <td><code>alarms</code></td>
+            <td>The optional background check that keeps the toolbar badge current when no dashboard tab is open. It ships <strong>off</strong></td>
+          </tr>
+          <tr>
+            <td><code>notifications</code></td>
+            <td>Telling you when a pipeline you explicitly chose to watch starts or finishes, or when a starred pipeline turns red</td>
+          </tr>
+          <tr>
+            <td><code>offscreen</code></td>
+            <td>A Manifest V3 service worker has no DOM and cannot play a sound. The offscreen document exists only to play the short bundled chime</td>
+          </tr>
+          <tr>
+            <td>Host access</td>
+            <td>Requested <strong>one origin at a time</strong>, at the moment you press Connect. The extension ships with no site access at all</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        GoCD Lens has <strong>no content scripts</strong>, so it cannot read, alter or observe any
+        web page you visit. It has no <code>tabs</code>, <code>cookies</code>,
+        <code>webRequest</code>, <code>history</code> or <code>scripting</code> permission.
+      </p>
+
+      <h2>Deleting your data</h2>
+      <p>
+        Open the extension's settings page and press <strong>Erase everything</strong>. That clears
+        the connection, any stored credential, your settings, your stars and watches, and the cached
+        pipeline list. Removing the extension from your browser also removes everything it stored.
+      </p>
+
+      <h2>Children</h2>
+      <p>
+        GoCD Lens is a developer tool for continuous-delivery servers. It is not directed at children
+        and collects nothing from anyone.
+      </p>
+
+      <h2>Changes to this policy</h2>
+      <p>
+        Any change will be published on this page, with the date at the top updated.
+      </p>
+
+      <h2>Contact</h2>
+      <!--
+        REQUIRED BEFORE SUBMITTING TO THE CHROME WEB STORE.
+        Replace the placeholder below with the address you want reviewers and users to write to.
+      -->
+      <p><strong>Contact:</strong> <code>&lt;your contact email&gt;</code></p>
+    </main>
+
+    <footer class="foot">
+      <div class="foot-grid">
+        <div>
+          <a class="brand" href="/">
+            <img src="/img/icon32.png" alt="" width="22" height="22" />
+            <span>GoCD Lens</span>
+          </a>
+          <p class="foot-note">Your GoCD pipelines, straight from the API.</p>
+        </div>
+        <nav aria-label="Footer">
+          <h3>Project</h3>
+          <a href="/">Home</a>
+          <a href="/#install">Install</a>
+          <a href="/privacy">Privacy policy</a>
+        </nav>
+        <nav aria-label="Related">
+          <h3>Related</h3>
+          <a href="https://www.gocd.org/">GoCD</a>
+          <a href="https://github.com/Sahilll15/lazygocd">lazygocd</a>
+        </nav>
+      </div>
+      <p class="copy">MIT licensed. Not affiliated with the GoCD project or ThoughtWorks.</p>
+    </footer>
+  </body>
+</html>

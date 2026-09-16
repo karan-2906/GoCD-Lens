@@ -72,6 +72,6 @@ component, no account, no sign-up.
 ## Links
 
 - Source code: https://github.com/karan-2906/GoCD-Lens
-- Privacy policy: https://github.com/karan-2906/GoCD-Lens/blob/main/docs/PRIVACY.md
+- Privacy policy: https://gocd-lens.vercel.app/privacy
 - lazygocd (terminal UI, same problem): https://github.com/Sahilll15/lazygocd
 - GoCD: https://www.gocd.org/
