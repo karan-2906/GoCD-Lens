@@ -39,7 +39,29 @@ import { openJobViewer } from './job-viewer.js';
 /** Per-pipeline history, kept between renders so paging and selection survive. */
 const historyCache = new Map();
 
+/**
+ * Which jobs are ticked for a re-run, kept outside the DOM.
+ *
+ * A poll lands every few seconds and `render()` rebuilds the whole screen, so a
+ * selection that lives only in the checkboxes disappears while you are still
+ * making it -- you tick three of twelve jobs, the dashboard refreshes, and they
+ * are all clear again.
+ *
+ * Keyed by the exact stage attempt. A re-run increments the stage counter, so
+ * the next attempt starts from its own failures rather than inheriting a
+ * selection made against the previous one.
+ */
+const selections = new Map();
+
+const selectionKey = (pipeline, counter, stage, stageCounter) =>
+  [pipeline, counter, stage, stageCounter].join('\u0000');
+
 export function renderPipeline(host, name) {
+  // Bound the store: only the pipeline on screen can have a live selection.
+  for (const key of selections.keys()) {
+    if (!key.startsWith(`${name}\u0000`)) selections.delete(key);
+  }
+
   const pipeline = pipelineByName(name);
   const entry = historyCache.get(name);
 
@@ -343,6 +365,22 @@ function stageCard(pipeline, run, stage) {
   const boxes = new Map();
   const chosen = () => [...boxes].filter(([, box]) => box.checked).map(([name]) => name);
 
+  const key = selectionKey(pipeline, run.counter, stage.name, stageCounter);
+  const names = runnable.map((job) => job.name);
+  const remembered = selections.get(key);
+  const ticked = remembered
+    ? // Jobs can come and go between polls; keep only what still exists.
+      new Set([...remembered].filter((name) => names.includes(name)))
+    : // First sight of this attempt: what failed is what you usually want again.
+      new Set(runnable.filter((job) => jobStatus(job) === 'Failed').map((job) => job.name));
+  selections.set(key, ticked);
+
+  /** The store is the truth a repaint reads back; the checkboxes are just a view of it. */
+  const commit = () => {
+    selections.set(key, new Set(chosen()));
+    syncRerun();
+  };
+
   const rerunText = el('span', { text: 'Re-run' });
   let selectAll = null;
 
@@ -368,7 +406,7 @@ function stageCard(pipeline, run, stage) {
       type: 'checkbox',
       onchange: () => {
         for (const box of boxes.values()) box.checked = selectAll.checked;
-        syncRerun();
+        commit();
       },
     });
     actions.append(
@@ -443,7 +481,7 @@ function stageCard(pipeline, run, stage) {
 
     // Failed jobs arrive ticked: retrying what broke is the common case, and a
     // picker that starts empty would cost a click per job to get back here.
-    const box = el('input', { type: 'checkbox', checked: jobState === 'Failed', onchange: syncRerun });
+    const box = el('input', { type: 'checkbox', checked: ticked.has(job.name), onchange: commit });
     boxes.set(job.name, box);
     jobs.append(
       el(

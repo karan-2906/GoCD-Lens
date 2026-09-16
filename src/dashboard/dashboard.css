@@ -948,11 +948,19 @@ body {
   cursor: pointer;
 }
 
-/* Ticking a job must not open its log, so the checkbox sits outside that button. */
+/*
+ * Ticking a job must not open its log, so the checkbox sits outside that button.
+ *
+ * It stretches to the row rather than carrying its own vertical padding: the row
+ * is as tall as the status pill inside the button next to it, so a box sized by
+ * its own padding sits a few pixels high of everything it lines up with.
+ */
 .job-check {
   display: flex;
+  align-self: stretch;
   align-items: center;
-  padding: 7px 0 7px 12px;
+  justify-content: center;
+  padding: 0 2px 0 12px;
   cursor: pointer;
 }
 
@@ -967,7 +975,7 @@ body {
 
 /* In the stage header the same control selects or clears every job. */
 .stage-actions .job-check {
-  padding: 0 2px 0 0;
+  padding: 0 4px;
 }
 
 .job-name {

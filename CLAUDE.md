@@ -219,6 +219,15 @@ button: ticking a job must not open its log, and an `<input>` cannot live inside
 a `<button>`. A select-all in the stage header keeps "re-run everything" at one
 click even though failures arrive ticked.
 
+The ticks live in a module-level `Map` in `pipeline-view.js`, not in the DOM. A
+poll lands every few seconds and `render()` rebuilds the whole screen, so a
+selection held only in the checkboxes is wiped while you are still making it --
+tick three of twelve, wait for the next refresh, and they are all clear again.
+Same reason scroll position is preserved. The key includes the **stage counter**,
+so the attempt created by a re-run starts from its own failures instead of
+inheriting the selection that produced it, and the store is pruned to the
+pipeline on screen.
+
 ---
 
 ## Deliberately absent — do not re-add without asking
