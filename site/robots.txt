@@ -15,4 +15,4 @@ Allow: /
 User-agent: Google-Extended
 Allow: /
 
-Sitemap: https://gocd-lens.vercel.app/sitemap.xml
+Sitemap: https://go-cd-lens.vercel.app/sitemap.xml

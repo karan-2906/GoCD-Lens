@@ -48,8 +48,9 @@ cd site && python3 -m http.server 8000     # then open http://127.0.0.1:8000
 
 ## Before the first real deploy — change the domain
 
-The canonical URL is written into five places, all currently `https://gocd-lens.vercel.app`. If
-you use a different domain, change all five or search engines will index the wrong host:
+The canonical URL is written into 13 places, all currently `https://go-cd-lens.vercel.app`. If you
+move to a different domain, change every one or search engines will index a host that does not
+exist:
 
 | File | Occurrences |
 |---|---|
@@ -61,7 +62,7 @@ you use a different domain, change all five or search engines will index the wro
 
 ```sh
 # after picking a domain
-grep -rl 'gocd-lens.vercel.app' site/ | xargs sed -i '' 's|gocd-lens.vercel.app|your-domain.com|g'
+grep -rl 'go-cd-lens.vercel.app' site/ | xargs sed -i '' 's|go-cd-lens.vercel.app|your-domain.com|g'
 ```
 
 ## After the first deploy, check these

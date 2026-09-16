@@ -196,7 +196,7 @@ Then tick all three certifications; each is true here:
 
 **Privacy policy URL** — required, and it must be publicly reachable without a login.
 
-Use the landing page's own copy: **`https://gocd-lens.vercel.app/privacy`** (substitute your real
+Use the landing page's own copy: **`https://go-cd-lens.vercel.app/privacy`** (substitute your real
 domain). It is [`site/privacy.html`](../site/privacy.html), it deploys with the site, and it does
 not depend on the source repository being public.
 
