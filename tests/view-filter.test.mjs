@@ -165,7 +165,7 @@ test('the extension\u2019s own views are namespaced so they cannot clash', () =>
 });
 
 test('a built-in view is just a whitelist of what you picked', () => {
-  // Starring three pipelines out of six thousand should show exactly three.
+  // Starring three pipelines out of thousands should show exactly three.
   const starred = { name: 'local:starred', type: 'whitelist', state: [], pipelines: ['cda-build'] };
   const result = applyView(PAYLOAD, starred);
   assert.deepEqual(names(result), ['cda-build']);

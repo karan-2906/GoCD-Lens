@@ -22,8 +22,8 @@ No build step. The files in `src/` are the files that run. Reload from
 
 ## The target instance
 
-This is aimed at a **~6300 pipeline** GoCD server with **~900 failing** at any
-time, behind a corporate VPN. That number drives most of the design: anything
+This is aimed at a **very large** GoCD server -- thousands of pipelines, with
+hundreds failing at any time -- behind a corporate VPN. That number drives most of the design: anything
 that is O(pipelines) per poll, or renders every pipeline at once, is wrong here.
 
 ---
@@ -78,7 +78,7 @@ These cost real debugging. Do not "simplify" them away.
 **`viewName` must use `%20`, not `+`.** `URLSearchParams` encodes spaces as `+`.
 GoCD's own dashboard sends `viewName=Visual%20Builder` (confirmed in DevTools on
 a live server). If a server does not decode `+`, it silently ignores the filter
-and returns all 6300 pipelines — visible only as a fat payload, because local
+and returns every pipeline on the instance — visible only as a fat payload, because local
 enforcement still shows the right list.
 
 **`allowEmpty=true`** goes alongside `viewName`, so a view matching nothing means
@@ -199,7 +199,7 @@ trusted.
 
 **Scale defences.** The popup pages 16 at a time behind *Load more*; the log
 viewer renders the last 6000 lines and offers a download for the rest. Rendering
-6300 cards locks the tab, which is why groups start collapsed -- but an expanded
+every card at once locks the tab, which is why groups start collapsed -- but an expanded
 group now paints in full: opening one is a deliberate ask for what is in it, and
 a 30-row cap with *Show all N* only put a second click in front of the answer.
 The one path that can still ask for everything at once is a search broad enough

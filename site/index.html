@@ -170,7 +170,10 @@
           page entirely and draws its own — so what you see is whatever the server actually knows.
         </p>
         <div class="cta">
-          <a class="btn btn-primary" href="#install">Install it</a>
+          <!-- STORE LINK (2 of 2) -- swap for the listing URL when it is live. -->
+          <a class="btn btn-primary" href="https://chromewebstore.google.com/search/GoCD%20Lens"
+            >Add to Chrome</a
+          >
           <a class="btn" href="https://github.com/karan-2906/GoCD-Lens">Read the source</a>
         </div>
         <ul class="badges">
@@ -193,10 +196,9 @@
 
       <!-- ------------------------------------------------------ features -->
       <section id="features" class="band">
-        <h2>Built for six thousand pipelines and nine hundred failures</h2>
+        <h2>Built for fleets that don't fit on one screen</h2>
         <p class="sub">
-          It was written against an instance that size. Everything below follows from it: nothing
-          here costs a request per pipeline, and no screen tries to draw them all.
+          Nothing here costs a request per pipeline, and no screen tries to draw them all.
         </p>
 
         <div class="grid">
@@ -218,7 +220,7 @@
             <h3>Four letters is enough</h3>
             <p>
               Type <code>wabp</code> and get <code>web-app-build-prod</code>, with the matched
-              letters picked out. Searching six thousand names by substring is not a search.
+              letters picked out. Scrolling an alphabetical list is not a search.
             </p>
           </article>
           <article class="card">
@@ -409,35 +411,24 @@
       <!-- ------------------------------------------------------- install -->
       <section id="install" class="band">
         <h2>Install it</h2>
-
-        <!--
-          When the Chrome Web Store listing is live, replace this block with:
-          <a class="btn btn-primary btn-lg" href="https://chromewebstore.google.com/detail/gocd-lens/EXTENSION_ID">Add to Chrome</a>
-          and move the unpacked steps into a <details>.
-        -->
         <p class="sub">
-          Not on the Chrome Web Store yet. Until it is, load it from disk — there is no build step,
-          no npm install and no bundler, so the folder you clone is the thing that runs.
+          One click from the Chrome Web Store. Needs Chrome 116 or later, and works the same in
+          Microsoft Edge and Brave, which install Chrome Web Store extensions directly.
         </p>
 
-        <ol class="steps">
-          <li>
-            <code>git clone https://github.com/karan-2906/GoCD-Lens.git</code>
-          </li>
-          <li>Open <code>chrome://extensions</code></li>
-          <li>Turn on <strong>Developer mode</strong>, top right</li>
-          <li>Click <strong>Load unpacked</strong> and pick the folder you cloned</li>
-          <li>
-            The setup page opens. Enter the GoCD address you normally use — usually ending in
-            <code>/go</code> — and press Connect.
-          </li>
-        </ol>
+        <div class="cta cta-left">
+          <!-- STORE LINK (1 of 2) -- swap for the listing URL when it is live. -->
+          <a class="btn btn-primary btn-lg" href="https://chromewebstore.google.com/search/GoCD%20Lens"
+            >Add to Chrome</a
+          >
+          <a class="btn btn-lg" href="https://github.com/karan-2906/GoCD-Lens">View the source</a>
+        </div>
 
         <p class="footnote">
-          Setup verifies the credential against your server <em>before</em> saving it, so a typo or
-          a blocked session surfaces there and then rather than as a mysteriously empty dashboard
-          later. Rolling it out to a team is covered in
-          <a href="https://github.com/karan-2906/GoCD-Lens/blob/HEAD/docs/PUBLISHING.md">PUBLISHING.md</a>.
+          On first run the setup page opens. Enter the GoCD address you normally use — usually
+          ending in <code>/go</code> — and press Connect. Setup verifies the credential against your
+          server <em>before</em> saving it, so a typo or a blocked session surfaces there and then
+          rather than as a mysteriously empty dashboard later.
         </p>
       </section>
 

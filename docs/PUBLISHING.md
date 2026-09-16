@@ -39,7 +39,8 @@ Then check, in order:
 - [ ] **Bump `version` in `manifest.json`.** The store rejects a version it has already seen, and
       this is the single most common failed upload. `1.0.0` → `1.0.1`.
 - [ ] `manifest.json` `name`, `description` and icons are what you want publicly visible.
-- [ ] **The privacy policy is live at a public URL.** See step 5 — this blocks submission.
+- [ ] **The site is deployed and `https://<your-domain>/privacy` opens in a private window.**
+      That URL is what the reviewer checks, and a submission without a reachable one is rejected.
 - [ ] Open `gocd-lens.zip` and confirm it contains `manifest.json`, `icons/`, `sounds/`, `src/`
       and nothing else — no `.git`, no `docs/`, no `node_modules`.
 - [ ] Load the unpacked folder once in Chrome and connect it to a real GoCD server. Nothing in
@@ -203,8 +204,8 @@ not depend on the source repository being public.
 > reviewer and would get the submission rejected. Deploy the site first, confirm the `/privacy`
 > URL opens in a private browser window, and only then submit.
 
-[`PRIVACY.md`](PRIVACY.md) holds the same text for people reading the repository. **Both copies
-have a contact-email placeholder — fill in both before publishing.**
+[`PRIVACY.md`](PRIVACY.md) holds the same text for people reading the repository. Both carry the
+same contact address, so a change to one needs the same change to the other.
 
 ### 3.5 Distribution tab
 

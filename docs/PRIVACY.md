@@ -96,9 +96,7 @@ the top updated.
 
 ## Contact
 
-<!-- Replace this with the address you want reviewers and users to write to. The Chrome Web Store
-     requires a contact email on the account regardless. -->
-**Contact:** `karangandhi486@gmail.com`
+**Contact:** [karangandhi486@gmail.com](mailto:karangandhi486@gmail.com)
 
 **Source code:** every claim on this page can be checked against the source, and
 `tests/package-integrity.test.mjs` enforces the important ones against the actual files.

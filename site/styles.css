@@ -239,6 +239,16 @@ h1 {
   border-color: #5c96f7;
 }
 
+.cta-left {
+  justify-content: flex-start;
+  margin-top: 36px;
+}
+
+.btn-lg {
+  padding: 15px 30px;
+  font-size: 17px;
+}
+
 .badges {
   display: flex;
   flex-wrap: wrap;
@@ -478,22 +488,6 @@ h3 {
 }
 
 .checks strong {
-  color: var(--text);
-}
-
-/* ------------------------------------------------------------------ steps */
-
-.steps {
-  margin: 36px 0 0;
-  padding-left: 22px;
-  display: grid;
-  gap: 12px;
-  color: var(--muted);
-  font-size: 16px;
-  max-width: 760px;
-}
-
-.steps strong {
   color: var(--text);
 }
 

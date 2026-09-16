@@ -899,7 +899,7 @@ test('the badge source can be pinned to watching or starred explicitly', async (
 
 test('an explicit source with an empty list says so instead of counting everything', async () => {
   // Choosing "only what I am watching" and watching nothing should not silently
-  // widen to all six thousand pipelines.
+  // widen to every pipeline on the instance.
   await connect();
   world = { 'web-app': 'Failed', api: 'Failed' };
   await send('refresh', { force: true });

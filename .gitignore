@@ -3,3 +3,6 @@ node_modules/
 gocd-lens.zip
 *.pem
 *.crx
+
+# Regenerated on demand with `npm run store`; only needed at submission time.
+docs/store/

@@ -18,9 +18,8 @@ site/
 
 The Chrome Web Store requires a privacy policy at a URL a reviewer can open anonymously. Hosting it
 on the site rather than in the repository means it works whether or not the source repository is
-public -- and the repository is currently private, so a `github.com/.../blob/...` URL would 404 and
-get the submission rejected. `docs/PRIVACY.md` keeps the same text for people reading the repo;
-**both have a contact-email placeholder that must be filled in before publishing.**
+public. `docs/PRIVACY.md` keeps the same text for people reading the repository; both carry the
+same contact address, so a change to one needs the same change to the other.
 
 ## Regenerating the images
 
@@ -78,6 +77,13 @@ grep -rl 'gocd-lens.vercel.app' site/ | xargs sed -i '' 's|gocd-lens.vercel.app|
 
 ## When the Chrome Web Store listing goes live
 
-`index.html` has a comment in the install section marking exactly what to replace with the
-**Add to Chrome** button and the store URL. The FAQ, the JSON-LD `featureList` and `llms.txt`
-should not need to change.
+Both **Add to Chrome** buttons currently point at a Chrome Web Store *search* for "GoCD Lens",
+which is a real URL but will not find the extension until it is listed. Each is marked with a
+comment:
+
+```sh
+grep -n 'STORE LINK' site/index.html
+```
+
+Swap both for the listing URL (`https://chromewebstore.google.com/detail/gocd-lens/<extension-id>`).
+Nothing else on the site needs to change.

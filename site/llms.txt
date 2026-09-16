@@ -36,7 +36,8 @@ uses the API.
 
 ## Scale and server cost
 
-Written against a GoCD instance with roughly 6,300 pipelines, of which ~900 fail at any time.
+Designed for large GoCD installations, where a dashboard cannot afford to do work proportional to
+the number of pipelines.
 
 - One request per poll regardless of fleet size. No per-pipeline polling exists anywhere.
 - Unchanged data costs an empty HTTP 304, because every poll sends the previous ETag.
