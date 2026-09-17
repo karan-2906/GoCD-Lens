@@ -141,6 +141,16 @@ function restoreSearch(saved) {
   const search = $('#search');
   search.value = saved;
   $('#search-clear').hidden = false;
+
+  // Re-assert it, which restarts the TTL and repaints the badge.
+  //
+  // The clock runs from when the search was last *written*, and restoring it
+  // did not count as writing. So a search shown in this box could already be
+  // older than the TTL, and the next thing to read it -- the badge -- would be
+  // told there is no search at all. That is the badge saying 3 running above a
+  // popup showing 1: same cache, same matcher, but one of them had been handed
+  // an empty needle. A search you are looking at is not stale.
+  rememberSearch();
   // Handing back text with no caret in it is half the feature: the reason you
   // are back is usually to type one more character, or to clear it.
   search.focus();

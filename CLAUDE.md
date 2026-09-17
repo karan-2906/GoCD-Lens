@@ -205,6 +205,13 @@ repainted on the keystroke rather than at the next poll, because with background
 checking off there may not be a next poll, and it widens again on its own when
 the search expires.
 
+**A restored search is re-asserted, not just displayed.** The TTL runs from the
+last *write*, and restoring the box was not a write -- so a search could expire
+while you were looking at it, and the badge, which reads through the TTL, would
+widen to the whole view while the popup stayed narrowed. Badge 3 above a popup
+reading 1 running: same cache, same matcher, one of them handed an empty needle.
+`restoreSearch` writes it back, which restarts the clock and repaints the badge.
+
 **Everything in the popup counts the same set.** The tiles and the built-in view
 counts follow the search box, so a picker cannot read `Starred (4)` above three
 rows, or `Failing 2` above one failure. A tile therefore carries the search with

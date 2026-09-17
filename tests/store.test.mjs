@@ -209,3 +209,29 @@ test('nothing the store does ever reaches Chrome’s syncing storage', async () 
 
   assert.equal(sync.data.size, 0, 'a credential must never be synced off this machine');
 });
+
+test('re-asserting a search restarts its clock, so the badge keeps seeing it', async () => {
+  // The popup shows a restored search in its box and counts against it. If the
+  // clock still ran from the original keystroke, the search could expire while
+  // it is on screen -- and the badge, which reads through the TTL, would widen
+  // to the whole view while the popup narrowed to a handful. Same data, two
+  // different answers, which is the one thing the badge must never do.
+  await store.setPopupSearch('dev11-live');
+  const saved = local.data.get('popupSearch');
+  local.data.set('popupSearch', { ...saved, at: saved.at - store.POPUP_SEARCH_TTL_MS + 500 });
+
+  // On the brink: still restored, so the popup would show it.
+  assert.equal(await store.getPopupSearch(), 'dev11-live');
+
+  // Restoring it re-asserts it, which is what the popup now does on open.
+  await store.setPopupSearch('dev11-live');
+  local.data.set('popupSearch', {
+    ...local.data.get('popupSearch'),
+    at: local.data.get('popupSearch').at - store.POPUP_SEARCH_TTL_MS + 500,
+  });
+  assert.equal(
+    await store.getPopupSearch(),
+    'dev11-live',
+    'the clock runs from the last write, not from the first keystroke',
+  );
+});
