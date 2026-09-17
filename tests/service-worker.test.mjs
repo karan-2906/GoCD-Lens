@@ -32,6 +32,8 @@ let audioBlocked = false;
 let gated = false;
 /** GoCD's view lookup is broken while the pipelines themselves answer fine. */
 let viewsBroken = false;
+/** Set to a promise to make the next dashboard request wait, as a slow server does. */
+let holdDashboard = null;
 let notificationLevel = 'granted';
 let messageListener = null;
 
@@ -191,6 +193,11 @@ globalThis.fetch = async (url, options = {}) => {
   if (path === '/go/api/version') return json({ version: '23.5.0' });
   if (path === '/go/api/current_user') return json({ login_name: 'karan' });
   if (path === '/go/api/dashboard') {
+    if (holdDashboard) {
+      const gate = holdDashboard;
+      holdDashboard = null;
+      await gate;
+    }
     const asked = new URL(url).searchParams.get('viewName');
     if (viewsBroken && asked) {
       return json({ message: 'Failed to resolve view' }, { status: 500 });
@@ -245,6 +252,7 @@ beforeEach(() => {
   audioBlocked = false;
   gated = false;
   viewsBroken = false;
+  holdDashboard = null;
   notificationLevel = 'granted';
   for (const key of Object.keys(calls)) calls[key].length = 0;
   world = { 'web-app': 'Passed', api: 'Passed' };
@@ -607,6 +615,37 @@ test('the badge can be pinned to the open view instead', async () => {
 });
 
 // -------------------------------------------------- personalized GoCD views
+
+test('picking a view while a poll is in flight is not answered with the view you left', async () => {
+  await connect();
+  // 'Mine' holds web-app only, so the failure is in the view being left and not
+  // in the one being picked: the badge has to go from 1 to nothing.
+  world = { 'web-app': 'Passed', api: 'Failed' };
+  await send('refresh', { force: true });
+  assert.equal(calls.badgeText.at(-1), '1');
+
+  // A dashboard tab, the popup and the alarm all poll on their own timers, so
+  // on a slow server there is usually a request in the air when you reach for
+  // the picker.
+  let release;
+  holdDashboard = new Promise((resolve) => {
+    release = resolve;
+  });
+  const polling = send('refresh', { force: true });
+  const picking = send('refresh', { force: true, view: 'Mine' });
+  release();
+  await polling;
+  const picked = await picking;
+
+  assert.equal(picked.view, 'Mine');
+  assert.deepEqual(
+    picked.pipelines.map((p) => p.name),
+    ['web-app'],
+  );
+  const state = await send('getState');
+  assert.equal(state.settings.activeView, 'Mine', 'the choice was never saved');
+  assert.equal(calls.badgeText.at(-1), '', 'the badge kept counting the view you left');
+});
 
 test('selecting a view narrows what the server sends back', async () => {
   await connect();

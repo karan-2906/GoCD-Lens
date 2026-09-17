@@ -162,6 +162,13 @@ badge and notifications cannot disagree. Two built-in views (`local:starred`,
 they send no `viewName` and filter locally — which is exactly why they survive a
 views outage.
 
+**Pollers share one request; a view change never joins them.** Several tabs, the
+popup and the alarm each poll on their own timer, so `refreshDashboard` hands a
+concurrent caller the request already in the air. Picking a view is not that same
+question: answering it with the running request returns the payload for the view
+being left, and skips the body, so `activeView` is never written and the badge
+goes on counting what you navigated away from. It waits for the poll instead.
+
 **Changing view keeps what you typed and drops what you picked.** `selectView`
 clears the chosen group -- it may not exist in the new view -- and lands you back
 on the list, since that is the only place the view you just picked is visible.

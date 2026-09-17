@@ -136,7 +136,16 @@ let inFlight = null;
  * notifications in step. Concurrent callers share one request.
  */
 async function refreshDashboard({ force = false, view = undefined, background = false } = {}) {
-  if (inFlight) return inFlight;
+  // Pollers share one request -- see the cache note below, it is the same
+  // reasoning -- but only while they are all asking the same question.
+  if (inFlight && view === undefined) return inFlight;
+  // Picking a view is a different question, and handing it the running request
+  // answers it with the view being left: the body never runs, so the choice is
+  // not saved, the badge goes on counting what you just navigated away from,
+  // and the list snaps back. Easy to miss locally and near-certain on the real
+  // server, where a tab, the popup and the alarm all have something in the air
+  // whenever you reach for the picker.
+  while (inFlight) await inFlight.catch(() => {});
   inFlight = (async () => {
     const conn = await getConnection();
     if (!conn) return { configured: false };
