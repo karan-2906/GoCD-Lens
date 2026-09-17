@@ -240,8 +240,8 @@ websites. You grant it one address when you press Connect. That's the whole list
 
 **Nothing is uploaded, and nothing is synced.** Browsers offer two filing cabinets: a local one, and
 a synced one that copies to your account and every other machine you use. GoCD Lens uses the local
-one only. The synced one is never touched anywhere in the code — and there's an automatic check
-that refuses to let the project be released if anyone ever changes that.
+one only. The synced one is never touched anywhere in the code — and an automatic check reads the
+actual files and fails if anyone ever changes that, which blocks the change from being committed.
 
 **Text from the factory is never treated as instructions.** Build logs and commit messages are
 written by other people and machines. If such text were dropped carelessly onto a page, it could
