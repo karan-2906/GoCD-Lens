@@ -477,7 +477,7 @@ const STORE = [
     height: 800,
     driver: waitFor('.card-p', `
       el.click();
-      ${waitForText('.job-row', 'api-tests', 'el.click();')}
+      ${waitForText('.job-row', 'api-tests', "el.querySelector('.job-open').click();")}
     `),
   },
   { name: 'store-dark', page: 'src/dashboard/dashboard.html', width: 1280, height: 800, theme: 'dark' },
@@ -509,7 +509,7 @@ const SITE = [
     height: 800,
     driver: waitFor('.card-p', `
       el.click();
-      ${waitForText('.job-row', 'api-tests', 'el.click();')}
+      ${waitForText('.job-row', 'api-tests', "el.querySelector('.job-open').click();")}
     `),
   },
   {
@@ -571,7 +571,7 @@ const SHOTS = [
     // for the screen before it, because every one of them paints from a reply.
     driver: waitFor('.card-p', `
       el.click();
-      ${waitForText('.job-row', 'api-tests', 'el.click();')}
+      ${waitForText('.job-row', 'api-tests', "el.querySelector('.job-open').click();")}
     `),
   },
   {

@@ -1224,6 +1224,9 @@ body {
   color: #fff;
 }
 
+/* A toolbar toggle that is currently on. `.follow-on` also labels the live
+   ticker in the footer, which is the same "this is running" green. */
+.toggle-on,
 .follow-on {
   color: var(--pass);
 }

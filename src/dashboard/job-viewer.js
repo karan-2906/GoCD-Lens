@@ -92,7 +92,7 @@ function followButton() {
   const button = el(
     'button',
     {
-      class: `btn btn-sm${session.follow ? ' follow-on' : ''}`,
+      class: `btn btn-sm${session.follow ? ' toggle-on' : ''}`,
       title: 'Keep scrolling as new output arrives',
       onclick: () => setFollow(!session.follow),
     },
@@ -103,11 +103,47 @@ function followButton() {
   return button;
 }
 
+/**
+ * Wrap is a toggle and has to look like one.
+ *
+ * It used to swap its own label between "Wrap" and "No wrap", but the label was
+ * read once when the toolbar was built and toggling only calls `renderBody`,
+ * which clears `#viewer-body` and leaves `#viewer-toolbar` alone -- so the
+ * button said "Wrap" whether wrapping was on or off. Repainting the toolbar to
+ * fix that is exactly what `followButton` refuses to do, because it takes the
+ * search box and the caret in it. So the node is kept and edited in place, and
+ * the state is shown the way Follow shows it rather than by renaming the verb.
+ */
+function wrapButton() {
+  const button = el(
+    'button',
+    {
+      class: `btn btn-sm${session.wrap ? ' toggle-on' : ''}`,
+      title: 'Wrap long lines instead of scrolling sideways',
+      onclick: () => setWrap(!session.wrap),
+    },
+    icon(session.wrap ? 'check' : 'list', { size: 12 }),
+    'Wrap',
+  );
+  session.wrapButton = button;
+  return button;
+}
+
+function setWrap(on) {
+  session.wrap = on;
+  const button = session.wrapButton;
+  if (button) {
+    button.classList.toggle('toggle-on', on);
+    clear(button).append(icon(on ? 'check' : 'list', { size: 12 }), document.createTextNode('Wrap'));
+  }
+  renderBody({ keepScroll: true });
+}
+
 function setFollow(on) {
   session.follow = on;
   const button = session.followButton;
   if (button) {
-    button.classList.toggle('follow-on', on);
+    button.classList.toggle('toggle-on', on);
     clear(button).append(icon(on ? 'check' : 'arrow-down', { size: 12 }), document.createTextNode('Follow'));
   }
   if (on) scrollToBottom();
@@ -153,18 +189,7 @@ function paintToolbar() {
       el('span', { class: 'faint', id: 'match-count' }),
       el('span', { class: 'spacer' }),
       followButton(),
-      el(
-        'button',
-        {
-          class: 'btn btn-sm',
-          title: 'Wrap long lines',
-          onclick: () => {
-            session.wrap = !session.wrap;
-            renderBody({ keepScroll: true });
-          },
-        },
-        session.wrap ? 'No wrap' : 'Wrap',
-      ),
+      wrapButton(),
       el('button', { class: 'btn btn-sm', title: 'Save the whole log to a file', onclick: downloadLog }, icon('download', { size: 12 }), 'Download'),
       el('button', { class: 'btn btn-sm', title: 'Copy the whole log', onclick: () => copyToClipboard(session.lines.join('\n')) }, icon('copy', { size: 12 })),
     );
