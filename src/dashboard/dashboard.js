@@ -77,6 +77,11 @@ async function init() {
   if (requested) state.route = { kind: 'pipeline', name: requested };
   const filter = params.get('filter');
   if (filter && FILTERS.some((f) => f.id === filter)) state.filter = filter;
+  // The popup counts its tiles against its own search box, so a tile arriving
+  // here without the search that shaped it would open a list nothing like the
+  // number that was clicked.
+  const search = params.get('search');
+  if (search) state.search = search;
 
   onRender(render);
   onFreshness(paintFreshness);

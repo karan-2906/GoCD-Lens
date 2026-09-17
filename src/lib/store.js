@@ -19,6 +19,7 @@ const K = {
   recent: 'recentPipelines',
   expanded: 'expandedGroups',
   views: 'viewDefinitions',
+  popupSearch: 'popupSearch',
 };
 
 export const DEFAULT_SETTINGS = {
@@ -242,6 +243,32 @@ export async function getExpandedGroups() {
 export async function setExpandedGroups(names) {
   await set(K.expanded, [...new Set(names)]);
   return getExpandedGroups();
+}
+
+/**
+ * What was typed into the popup's search box, and when.
+ *
+ * The popup is a fresh document every time it opens, so a click anywhere else
+ * on the page throws away what you typed -- which is a bad trade in a box whose
+ * whole job is finding one pipeline among thousands, several keystrokes at a
+ * time.
+ *
+ * It expires, because the popup's first duty is answering "is anything red?"
+ * and a filter left over from yesterday answers it about one pipeline while
+ * looking like it answered it about all of them. Coming straight back is
+ * continuing; opening it tomorrow is a new question.
+ */
+export const POPUP_SEARCH_TTL_MS = 5 * 60 * 1000;
+
+export async function getPopupSearch() {
+  const saved = await get(K.popupSearch, null);
+  if (!saved?.query) return '';
+  return Date.now() - (saved.at || 0) < POPUP_SEARCH_TTL_MS ? saved.query : '';
+}
+
+export async function setPopupSearch(query) {
+  if (!query) return set(K.popupSearch, null);
+  return set(K.popupSearch, { query, at: Date.now() });
 }
 
 export async function getRecent() {

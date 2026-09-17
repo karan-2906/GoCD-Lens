@@ -167,6 +167,24 @@ test('disconnecting drops the credential and the cache but keeps stars', async (
   assert.deepEqual(await store.getFavorites(), ['web-app'], 'stars are the user’s, not the server’s');
 });
 
+test('the popup search comes back if you reopen straight away', async () => {
+  await store.setPopupSearch('dev11');
+  assert.equal(await store.getPopupSearch(), 'dev11');
+
+  await store.setPopupSearch('');
+  assert.equal(await store.getPopupSearch(), '');
+});
+
+test('a popup search older than the TTL is not restored', async () => {
+  // A filter left over from yesterday would make the popup answer "is anything
+  // red?" about one pipeline while looking like it answered about all of them.
+  await store.setPopupSearch('dev11');
+  const saved = local.data.get('popupSearch');
+  local.data.set('popupSearch', { ...saved, at: saved.at - store.POPUP_SEARCH_TTL_MS - 1 });
+
+  assert.equal(await store.getPopupSearch(), '');
+});
+
 test('erasing everything leaves nothing behind', async () => {
   await store.setConnection({ serverUrl: 'https://x/go', authMode: 'token', token: 't' });
   await store.setSettings({ pollSeconds: 10 });
@@ -187,6 +205,7 @@ test('nothing the store does ever reaches Chrome’s syncing storage', async () 
   await store.toggleFavorite('web-app');
   await store.setCache({ pipelines: [] });
   await store.pushRecent('web-app');
+  await store.setPopupSearch('dev11');
 
   assert.equal(sync.data.size, 0, 'a credential must never be synced off this machine');
 });

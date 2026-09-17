@@ -27,6 +27,8 @@ import {
   pushRecent,
   getExpandedGroups,
   setExpandedGroups,
+  getPopupSearch,
+  setPopupSearch,
   getViewDefinitions,
   setViewDefinitions,
   wipeEverything,
@@ -783,14 +785,16 @@ async function mergeKeptSecret(connection) {
 const handlers = {
   async getState() {
     const conn = await getConnection();
-    const [settings, favorites, watched, cache, recent, expandedGroups] = await Promise.all([
-      getSettings(),
-      getFavorites(),
-      getWatched(),
-      getCache(),
-      getRecent(),
-      getExpandedGroups(),
-    ]);
+    const [settings, favorites, watched, cache, recent, expandedGroups, popupSearch] =
+      await Promise.all([
+        getSettings(),
+        getFavorites(),
+        getWatched(),
+        getCache(),
+        getRecent(),
+        getExpandedGroups(),
+        getPopupSearch(),
+      ]);
     // From cache, so a popup opens instantly and still works offline.
     const views = await getViewDefinitions();
     return {
@@ -802,12 +806,18 @@ const handlers = {
       cache,
       recent,
       expandedGroups,
+      popupSearch,
       views,
     };
   },
 
   async setExpandedGroups({ names }) {
     return setExpandedGroups(names || []);
+  },
+
+  async setPopupSearch({ query }) {
+    await setPopupSearch(query || '');
+    return true;
   },
 
   async saveConnection({ connection }) {

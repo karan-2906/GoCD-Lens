@@ -172,6 +172,21 @@ the new view down to the thing you were leaving. Boot passes
 `resetContext: false`: adopting a default view is not a choice the user made, and
 the popup and notifications deep-link straight into a pipeline before it runs.
 
+**The popup remembers what you typed, for five minutes.** It is a fresh
+document every time it opens, so a click anywhere else throws the search away
+-- a bad trade in a box whose whole job is finding one pipeline among thousands.
+It expires because the popup's first duty is *is anything red?*, and a filter
+left over from yesterday answers that about one pipeline while looking like it
+answered about all of them. Written on every keystroke rather than debounced,
+since the popup is torn down the instant it loses focus and a pending timer goes
+with it.
+
+**Everything in the popup counts the same set.** The tiles and the built-in view
+counts follow the search box, so a picker cannot read `Starred (4)` above three
+rows, or `Failing 2` above one failure. A tile therefore carries the search with
+it into the dashboard -- otherwise clicking `Failing 1` under a search opens the
+other 900.
+
 **Polls that change nothing do not redraw.** `refresh()` fingerprints the payload
 (ETag, else a rolling hash) and repaints only the clock when it matches. Scroll
 position is preserved across redraws of the same screen.

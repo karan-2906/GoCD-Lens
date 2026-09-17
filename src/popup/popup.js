@@ -72,11 +72,12 @@ async function init() {
     return;
   }
 
+  restoreSearch(bootstrap.popupSearch || '');
+
   if (bootstrap.cache) {
     pipelines = bootstrap.cache.pipelines || [];
     fetchedAt = bootstrap.cache.fetchedAt || 0;
     activeView = bootstrap.cache.view ?? activeView;
-    paintViewPicker();
     render();
   } else {
     paintViewPicker();
@@ -92,6 +93,7 @@ function wireSearch() {
     query = search.value;
     $('#search-clear').hidden = !query;
     shown = 8;
+    rememberSearch();
     render();
   });
 
@@ -116,8 +118,33 @@ function clearSearch() {
   $('#search').value = '';
   $('#search-clear').hidden = true;
   shown = 8;
+  rememberSearch();
   render();
   $('#search').focus();
+}
+
+/**
+ * Written on every keystroke rather than debounced, because the popup is torn
+ * down the instant it loses focus and a pending timer goes with it. That is
+ * affordable only in `storage.local`; `storage.sync`, which has a write-rate
+ * quota, is banned here for other reasons anyway.
+ */
+function rememberSearch() {
+  // Failing to remember a search is not worth interrupting anyone over.
+  send('setPopupSearch', { query }).catch(() => {});
+}
+
+/** Picks up a search from a popup dismissed moments ago; see the store's TTL. */
+function restoreSearch(saved) {
+  if (!saved) return;
+  query = saved;
+  const search = $('#search');
+  search.value = saved;
+  $('#search-clear').hidden = false;
+  // Handing back text with no caret in it is half the feature: the reason you
+  // are back is usually to type one more character, or to clear it.
+  search.focus();
+  search.setSelectionRange(saved.length, saved.length);
 }
 
 async function load({ force = false, view } = {}) {
@@ -134,7 +161,6 @@ async function load({ force = false, view } = {}) {
     pipelines = data.pipelines || [];
     fetchedAt = data.fetchedAt || Date.now();
     activeView = data.view ?? null;
-    paintViewPicker();
     render(data.stale ? data.error : null);
   } catch (err) {
     render(explain(err));
@@ -144,9 +170,19 @@ async function load({ force = false, view } = {}) {
 }
 
 function paintViewPicker() {
+  // Counts follow the search box. A picker reading "Starred (4)" above a list
+  // showing one is describing a set that is no longer on screen.
+  const needle = query.trim();
+  const matching = (names) =>
+    needle ? names.filter((name) => matchScore(needle, name) !== null).length : names.length;
+
+  // An option still has to exist when nothing in it matches, or a search that
+  // empties the view you are in also removes the way back out of it.
   const builtins = [];
-  if (favorites.length) builtins.push({ value: 'local:starred', label: 'Starred', count: favorites.length });
-  if (watched.length) builtins.push({ value: 'local:watched', label: 'Watching', count: watched.length });
+  if (favorites.length)
+    builtins.push({ value: 'local:starred', label: 'Starred', count: matching(favorites) });
+  if (watched.length)
+    builtins.push({ value: 'local:watched', label: 'Watching', count: matching(watched) });
 
   const picker = $('#view-picker');
   picker.hidden = views.length === 0 && builtins.length === 0;
@@ -235,8 +271,15 @@ function viewLabel() {
 }
 
 function render(warning = null) {
-  const failing = pipelines.filter((p) => pipelineStatus(p) === 'Failed');
-  const running = pipelines.filter((p) => pipelineStatus(p) === 'Building');
+  // One set of pipelines feeds the whole popup. Hiding 37 of 40 rows behind a
+  // search does not leave four of them running, and the tiles are the first
+  // thing read -- so they count what is on screen, not what is behind it.
+  const found = query.trim() ? matches() : null;
+  const inView = found ? found.map((match) => match.pipeline) : pipelines;
+  const failing = inView.filter((p) => pipelineStatus(p) === 'Failed');
+  const running = inView.filter((p) => pipelineStatus(p) === 'Building');
+
+  paintViewPicker();
 
   $('#freshness').textContent = fetchedAt ? freshnessAgo(fetchedAt) : '';
 
@@ -244,7 +287,7 @@ function render(warning = null) {
   summary.append(
     stat('fail', failing.length, 'Failing', 'failing'),
     stat('build', running.length, 'Running', 'building'),
-    stat('pass', pipelines.length - failing.length - running.length, 'Green', 'all'),
+    stat('pass', inView.length - failing.length - running.length, 'Green', 'all'),
   );
 
   const body = clear($('#body'));
@@ -260,8 +303,8 @@ function render(warning = null) {
     );
   }
 
-  if (query.trim()) {
-    paintSections(body, [{ title: null, members: matches() }], { searching: true });
+  if (found) {
+    paintSections(body, [{ title: null, members: found }], { searching: true });
     titleClippedRows();
     return;
   }
@@ -352,7 +395,9 @@ function titleClippedRows() {
 function stat(kind, value, label, filter) {
   return el(
     'button',
-    { class: `stat ${kind}`, onclick: () => openDashboard({ filter }) },
+    // Carrying the search matters most where the count is smallest: clicking
+    // "Failing 1" under a search must not open the other 900.
+    { class: `stat ${kind}`, onclick: () => openDashboard({ filter, search: query.trim() || null }) },
     el('span', { class: 'n', text: String(value) }),
     el('span', { class: 'l', text: label }),
   );
