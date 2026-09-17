@@ -30,7 +30,6 @@ const ESC = String.fromCharCode(27);
 
 test('rollup reports the worst status across stages', () => {
   assert.equal(rollup(['Passed', 'Passed']), 'Passed');
-  assert.equal(rollup(['Passed', 'Building', 'Failed']), 'Failed');
   assert.equal(rollup(['Passed', 'Building']), 'Building');
   assert.equal(rollup(['Passed', 'Cancelled']), 'Cancelled');
   assert.equal(rollup(['Cancelled', 'Failed']), 'Failed', 'a failure outranks a cancellation');
@@ -57,6 +56,18 @@ test('a run that stopped part-way with everything passing is Passed', () => {
 test('a stage still running outranks one that has not started', () => {
   assert.equal(rollup(['Passed', 'Building', 'Unknown']), 'Building');
   assert.equal(rollup(['Passed', 'Failed', 'Unknown']), 'Failed', 'a failure is still the headline');
+});
+
+test('a stage building right now outranks a stage that failed', () => {
+  // GoCD stops a run at the stage that failed, so a later stage can only be
+  // moving because someone re-ran the failed one -- and then the pipeline is
+  // being worked on, not sitting broken. Reading it as failed left the badge
+  // red with nothing to count while the pipeline page said "Building".
+  assert.equal(rollup(['Passed', 'Failed', 'Building']), 'Building');
+  assert.equal(rollup(['Failed', 'Scheduled']), 'Building', 'queued work is work in flight');
+  assert.equal(rollup(['Cancelled', 'Building']), 'Building');
+  // And with nothing moving, the failure is still the headline.
+  assert.equal(rollup(['Passed', 'Failed', 'Cancelled']), 'Failed');
 });
 
 test('nothing known about any stage is still never-run', () => {

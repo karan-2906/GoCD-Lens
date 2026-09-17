@@ -259,7 +259,29 @@ function firstAuthor(run) {
   return '';
 }
 
-async function loadHistory(name, { reset = false } = {}) {
+/**
+ * Everything the page draws off a run, and nothing that merely ticks.
+ *
+ * A history response carries durations and relative times that move on their
+ * own, so comparing responses whole would report a change every few seconds and
+ * defeat the point. This is the shape the screen actually shows.
+ */
+function historyFingerprint(runs) {
+  return JSON.stringify(
+    runs.map((run) => [
+      run.counter,
+      run.label,
+      (run.stages || []).map((stage) => [
+        stage.name,
+        stageStatus(stage),
+        stage.counter,
+        (stage.jobs || []).map((job) => [job.name, job.state, job.result]),
+      ]),
+    ]),
+  );
+}
+
+async function loadHistory(name, { reset = false, silent = false } = {}) {
   const existing = historyCache.get(name);
   // A reset throws away the pages but not where you were looking or which run
   // you had open. The poll tick resets on every cycle while a run is building,
@@ -279,20 +301,32 @@ async function loadHistory(name, { reset = false } = {}) {
   entry.loading = true;
   entry.error = null;
   historyCache.set(name, entry);
-  if (reset) rerender();
+  // A silent load is the poll tick, which must not put a skeleton on screen
+  // over a page you are reading.
+  if (reset && !silent) rerender();
 
+  // The whole page is rebuilt from scratch on every render, so a poll that
+  // found nothing new is pure churn: it costs a full repaint of a long job
+  // list, and everything the DOM was holding -- a hovered row, a native
+  // tooltip, a partially-scrolled panel -- goes with it. Redraw on a change.
+  let changed = !silent;
   try {
     const after = reset ? null : entry.next;
     const { runs, next } = await send('history', { pipeline: name, after });
-    entry.runs = reset ? runs : [...entry.runs, ...runs];
+    const merged = reset ? runs : [...entry.runs, ...runs];
+    const fingerprint = historyFingerprint(merged);
+    changed = changed || fingerprint !== entry.fingerprint || next !== entry.next;
+    entry.runs = merged;
     entry.next = next;
+    entry.fingerprint = fingerprint;
     entry.at = Date.now();
     if (entry.selected == null) entry.selected = entry.runs[0]?.counter ?? null;
   } catch (err) {
     entry.error = explain(err);
+    changed = true;
   } finally {
     entry.loading = false;
-    rerender();
+    if (changed) rerender();
   }
 }
 
@@ -310,7 +344,7 @@ export function refreshOpenPipeline() {
   const busy = dashboardSaysBusy || historySaysBusy;
   // Only re-fetch when something is actually moving, or the first page is old.
   if (!busy && Date.now() - (entry.at || 0) < 60_000) return;
-  loadHistory(state.route.name, { reset: true });
+  loadHistory(state.route.name, { reset: true, silent: true });
 }
 
 // -------------------------------------------------------------------- run

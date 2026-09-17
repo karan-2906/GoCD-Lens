@@ -35,7 +35,7 @@ import {
   backgroundPeriodMinutes,
 } from '../lib/store.js';
 import { GoCdClient, GoCdError, originPattern } from '../lib/gocd.js';
-import { pipelineStatus, stageStatus, isActive } from '../lib/status.js';
+import { pipelineStatus, stageStatus, isActive, matchScore } from '../lib/status.js';
 
 const POLL_ALARM = 'gocd-lens-poll';
 
@@ -378,7 +378,11 @@ async function setBadge({ pipelines = null, offline = false } = {}) {
   if (!pipelines) return;
 
   const settings = await getSettings();
-  const [watched, favorites] = await Promise.all([getWatched(), getFavorites()]);
+  const [watched, favorites, search] = await Promise.all([
+    getWatched(),
+    getFavorites(),
+    getPopupSearch(),
+  ]);
 
   let label = null;
   let names = null;
@@ -406,8 +410,18 @@ async function setBadge({ pipelines = null, offline = false } = {}) {
     return;
   }
 
-  const counted = names ? pipelines.filter((p) => names.has(p.name)) : pipelines;
-  const unseen = names ? names.size - counted.length : 0;
+  const inSource = names ? pipelines.filter((p) => names.has(p.name)) : pipelines;
+
+  // A search typed into the popup narrows the badge too, so the toolbar agrees
+  // with the list underneath it instead of describing a set you have just
+  // filtered away. It goes when the search does -- which it does on its own
+  // after a few minutes, so the badge cannot be left narrowed by a search
+  // nobody remembers typing.
+  const needle = search.trim();
+  const counted = needle
+    ? inSource.filter((p) => matchScore(needle, p.name) !== null)
+    : inSource;
+  const unseen = names && !needle ? names.size - inSource.length : 0;
 
   const failing = counted.filter((p) => pipelineStatus(p) === 'Failed').length;
   // A run parked at a manual approval gate rolls up to Passed, not Building,
@@ -432,15 +446,21 @@ async function setBadge({ pipelines = null, offline = false } = {}) {
     await chrome.action.setBadgeText({ text: '' });
   }
 
-  await chrome.action.setTitle({ title: badgeTooltip({ failing, running, counted, label, unseen, settings }) });
+  await chrome.action.setTitle({
+    title: badgeTooltip({ failing, running, counted, label, unseen, settings, needle }),
+  });
 }
 
-function badgeTooltip({ failing, running, counted, label, unseen, settings }) {
-  const of = label
-    ? `of ${counted.length + unseen} ${label}`
-    : settings.activeView
-      ? `in ${BUILTIN_VIEWS[settings.activeView]?.label ?? settings.activeView}`
-      : 'across every pipeline';
+function badgeTooltip({ failing, running, counted, label, unseen, settings, needle }) {
+  // Said out loud, because a badge counting a subset without saying so is the
+  // mistake the `auto` source was removed for.
+  const of = needle
+    ? `of ${counted.length} matching "${needle}"`
+    : label
+      ? `of ${counted.length + unseen} ${label}`
+      : settings.activeView
+        ? `in ${BUILTIN_VIEWS[settings.activeView]?.label ?? settings.activeView}`
+        : 'across every pipeline';
 
   const parts = [];
   if (running) parts.push(`${running} running`);
@@ -826,6 +846,10 @@ const handlers = {
 
   async setPopupSearch({ query }) {
     await setPopupSearch(query || '');
+    // Repainted from the cache rather than waiting for the next poll, or the
+    // badge would lag the box you are typing into by a whole interval.
+    const cache = await getCache();
+    if (cache) await setBadge({ pipelines: cache.pipelines });
     return true;
   },
 

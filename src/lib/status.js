@@ -16,7 +16,21 @@ export const STATUS = {
 };
 
 /**
- * Worst case wins: Failed > Cancelled > Building > Passed > Unknown.
+ * Building > Failed > Cancelled > Passed > Unknown.
+ *
+ * Live work outranks a failure, which is not the obvious order -- a failure is
+ * the louder fact -- but the state where both are true only happens one way.
+ * GoCD halts a run at the stage that failed, so a later stage cannot be moving
+ * unless somebody re-ran the failed one, and then the honest answer to "what is
+ * this pipeline doing" is *building*: the failure is being dealt with, and the
+ * red segment still sits in the stage strip saying it happened.
+ *
+ * Ordering it the other way made the product disagree with itself. The pipeline
+ * page read the run as building, off the history endpoint; the list, the tiles
+ * and the badge read it as failed, off the dashboard payload; and the badge --
+ * which counts running before failing precisely so it can answer "is anything
+ * happening now" -- had nothing to count, so it sat red on a pipeline that was
+ * visibly in flight.
  *
  * The subtle case is a run that stopped part-way with everything it did run
  * having passed -- the normal shape of a pipeline held at a manual approval
@@ -52,9 +66,9 @@ export function rollup(statuses) {
     }
   }
 
+  if (anyBuilding) return 'Building';
   if (anyFailed) return 'Failed';
   if (anyCancelled) return 'Cancelled';
-  if (anyBuilding) return 'Building';
   if (anyPassed) return 'Passed';
   return 'Unknown';
 }

@@ -140,7 +140,10 @@ globalThis.chrome = {
 
 const SERVER = 'https://gocd.example.com/go';
 
-/** Stage statuses per pipeline, swapped between polls to simulate a change. */
+/**
+ * Stage statuses per pipeline, swapped between polls to simulate a change. A
+ * string is the one-stage case; an array spells a multi-stage run out.
+ */
 let world = { 'web-app': 'Passed', api: 'Passed' };
 let etagCounter = 0;
 let offline = false;
@@ -166,9 +169,11 @@ function dashboardBody(viewName = null) {
               counter: counters[name] ?? 1,
               label: String(counters[name] ?? 1),
               _embedded: {
-                stages: gated
-                  ? [{ name: 'build', status }, { name: 'deploy', status: 'Unknown' }]
-                  : [{ name: 'build', status }],
+                stages: Array.isArray(status)
+                  ? status.map((each, i) => ({ name: `stage-${i + 1}`, status: each }))
+                  : gated
+                    ? [{ name: 'build', status }, { name: 'deploy', status: 'Unknown' }]
+                    : [{ name: 'build', status }],
               },
             },
           ],
@@ -535,6 +540,35 @@ test('with nothing picked out, the badge counts the open view', async () => {
   await send('refresh', { force: true });
   assert.equal(calls.badgeText.at(-1), '2');
   assert.match(calls.titles.at(-1), /2 failing across every pipeline/);
+});
+
+test('a pipeline being re-run reads as running, not as failing', async () => {
+  await connect();
+  // The shape a re-run leaves on a run: the stage that failed is still on it,
+  // and a later stage is moving again. GoCD halts at a failure, so this state
+  // can only mean somebody restarted it.
+  world = { 'web-app': ['Passed', 'Failed', 'Building'], api: 'Passed' };
+  await send('refresh', { force: true });
+
+  assert.equal(calls.badgeText.at(-1), '1');
+  assert.equal(calls.badgeColor.at(-1), '#2563EB', 'it sat red with nothing to count');
+  assert.match(calls.titles.at(-1), /1 running/);
+});
+
+test('a search typed into the popup narrows the badge with it', async () => {
+  await connect();
+  world = { 'web-app': 'Failed', api: 'Failed' };
+  await send('refresh', { force: true });
+  assert.equal(calls.badgeText.at(-1), '2');
+
+  // Repainted on the keystroke, not at the next poll -- with background
+  // checking off, "the next poll" can be never.
+  await send('setPopupSearch', { query: 'web' });
+  assert.equal(calls.badgeText.at(-1), '1');
+  assert.match(calls.titles.at(-1), /matching "web"/, 'a narrowed badge has to say so');
+
+  await send('setPopupSearch', { query: '' });
+  assert.equal(calls.badgeText.at(-1), '2');
 });
 
 test('the badge can be told to follow your watch list', async () => {

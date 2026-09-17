@@ -93,6 +93,16 @@ is the absence of an answer, not an answer** — it must not shadow the jobs.
 See `stageStatus()`. This caused "shows running in the list, never-run when
 opened".
 
+**A stage building right now outranks a stage that failed.** `rollup` puts
+`Building` first. GoCD halts a run at the stage that failed, so a later stage can
+only be moving because someone re-ran the failed one -- and then the pipeline is
+being worked on, not sitting broken. Ordered the other way, the product
+contradicted itself: the pipeline page read the run as building off the history
+endpoint while the list, the tiles and the badge read it as failed off the
+dashboard payload, so the badge sat red with nothing to count on a pipeline
+visibly in flight. The red segment stays in the stage strip; only the headline
+changes.
+
 **A run that stopped part-way with everything passing is `Passed`.** Stages
 passed + later stages never scheduled is the shape of a pipeline held at a manual
 approval gate. That is green as far as it got, which is what GoCD's own dashboard
@@ -188,6 +198,13 @@ answered about all of them. Written on every keystroke rather than debounced,
 since the popup is torn down the instant it loses focus and a pending timer goes
 with it.
 
+**Everything counts the same set, badge included.** The badge is narrowed by
+the popup's search as well as by its source, and its tooltip says so -- a badge
+counting a subset without admitting it is what `auto` was removed for. It is
+repainted on the keystroke rather than at the next poll, because with background
+checking off there may not be a next poll, and it widens again on its own when
+the search expires.
+
 **Everything in the popup counts the same set.** The tiles and the built-in view
 counts follow the search box, so a picker cannot read `Starred (4)` above three
 rows, or `Failing 2` above one failure. A tile therefore carries the search with
@@ -197,6 +214,14 @@ other 900.
 **Polls that change nothing do not redraw.** `refresh()` fingerprints the payload
 (ETag, else a rolling hash) and repaints only the clock when it matches. Scroll
 position is preserved across redraws of the same screen.
+
+**The pipeline page redraws on a change, not on a poll.** It rebuilds from
+scratch on every render, so a tick that found nothing new is pure churn -- and
+while a run is building the tick fires every few seconds. `loadHistory` compares
+a fingerprint of what the screen actually shows (run counters, stage and job
+statuses) rather than the response, which carries durations that move on their
+own. A poll-driven reload is also silent: it must not drop a skeleton over a
+page you are reading.
 
 **Groups start collapsed**, and storage tracks which are *expanded* — so a new
 group appearing on the server stays folded instead of unfolding into your list.
