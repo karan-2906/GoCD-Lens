@@ -18,6 +18,7 @@ import zlib
 from pathlib import Path
 
 OUT = Path(__file__).resolve().parent.parent / "icons"
+SITE = Path(__file__).resolve().parent.parent / "site"
 
 # Deep navy in the register of GoCD's own branding, so the icon sits naturally
 # beside a GoCD tab, with our green for the glyph so it is plainly a different
@@ -162,20 +163,43 @@ def render(size):
     return pixels
 
 
-def write_png(path, size, rows):
+def png_bytes(size, rows):
     raw = b"".join(b"\x00" + row for row in rows)
 
     def chunk(tag, payload):
         body = tag + payload
         return struct.pack(">I", len(payload)) + body + struct.pack(">I", zlib.crc32(body))
 
-    png = (
+    return (
         b"\x89PNG\r\n\x1a\n"
         + chunk(b"IHDR", struct.pack(">IIBBBBB", size, size, 8, 6, 0, 0, 0))
         + chunk(b"IDAT", zlib.compress(raw, 9))
         + chunk(b"IEND", b"")
     )
-    path.write_bytes(png)
+
+
+def write_png(path, size, rows):
+    path.write_bytes(png_bytes(size, rows))
+
+
+def write_ico(path, sizes):
+    """Pack several renderings into one .ico.
+
+    An .ico entry may hold a PNG rather than a DIB, which every browser since
+    IE7 reads, so this is the same bytes the PNGs above are made of with a
+    directory bolted on front. Several sizes because the file is asked for by
+    everything from a 16px tab to a 48px bookmark tile, and the alternative to
+    shipping the right one is a browser downscaling the wrong one.
+    """
+    images = [(size, png_bytes(size, render(size))) for size in sizes]
+    entries = b""
+    body = b""
+    offset = 6 + 16 * len(images)
+    for size, png in images:
+        entries += struct.pack("<BBBBHHII", size, size, 0, 0, 1, 32, len(png), offset)
+        offset += len(png)
+        body += png
+    path.write_bytes(struct.pack("<HHH", 0, 1, len(images)) + entries + body)
 
 
 def main():
@@ -183,6 +207,17 @@ def main():
     for size in (16, 32, 48, 128):
         write_png(OUT / f"icon{size}.png", size, render(size))
         print(f"icons/icon{size}.png")
+
+    # The landing page wears the same mark. Writing it here rather than copying
+    # it by hand is the only way the two stay the same mark after an edit.
+    for size in (32, 128):
+        write_png(SITE / "img" / f"icon{size}.png", size, render(size))
+        print(f"site/img/icon{size}.png")
+
+    # /favicon.ico is requested by everything that never reads a <link> tag --
+    # crawlers, feed readers, bookmark tiles -- and was answering 404.
+    write_ico(SITE / "favicon.ico", (16, 32, 48))
+    print("site/favicon.ico")
 
 
 if __name__ == "__main__":

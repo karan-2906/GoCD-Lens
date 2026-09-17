@@ -26,7 +26,10 @@
     <meta name="twitter:title" content="Privacy Policy — GoCD Lens" />
     <meta name="twitter:image" content="https://go-cd-lens.vercel.app/img/og.png" />
 
-    <link rel="icon" href="/img/icon32.png" sizes="32x32" />
+    <!-- Crawlers and bookmark tiles ask for /favicon.ico without reading any of
+         this, so the .ico is the one that has to exist; it carries 16, 32 and 48. -->
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="icon" href="/img/icon32.png" type="image/png" sizes="32x32" />
     <link rel="apple-touch-icon" href="/img/icon128.png" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
