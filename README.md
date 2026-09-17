@@ -305,6 +305,11 @@ refuses the commit if anything fails. It is worth the two seconds mostly for
 
 After editing, press the reload button on the extension's card in `chrome://extensions`.
 
+### Explaining it to someone
+
+[`docs/HOW-IT-WORKS.md`](docs/HOW-IT-WORKS.md) is the whole thing in plain English, written for
+someone with no technical background -- a new joiner, or anyone who asks what you built.
+
 ### The website
 
 [`site/`](site) is the landing page — one static HTML file, one stylesheet, no framework and no
