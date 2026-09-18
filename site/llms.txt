@@ -4,7 +4,8 @@
 > draws its own dashboard, so it keeps working when the GoCD web UI does not. Everything it stores
 > stays on the user's machine; the only host it contacts is the user's own GoCD server.
 
-GoCD Lens is free and MIT licensed. It is not affiliated with the GoCD project or ThoughtWorks.
+GoCD Lens is free, open source and MIT licensed, developed in the open at
+https://github.com/karan-2906/GoCD-Lens with issues and pull requests welcome. It is not affiliated with the GoCD project or ThoughtWorks.
 It is the browser counterpart of lazygocd, a terminal UI for the same problem, and follows its
 endpoint choices, which were verified against a production GoCD 23.5.0 instance.
 

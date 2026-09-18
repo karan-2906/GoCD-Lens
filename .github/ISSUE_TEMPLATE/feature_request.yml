@@ -1,0 +1,34 @@
+name: Feature request
+description: Suggest something the extension should do
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Several features were built and then deliberately removed — `CLAUDE.md` has the table and
+        the reasons. If yours is on it, the *why* is the part worth arguing with.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What were you trying to do?
+      description: The problem, not the solution. It often has a cheaper answer than the one you had in mind.
+      placeholder: I watch 40 pipelines and cannot tell which of them the badge is counting.
+    validations:
+      required: true
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: What did you have in mind?
+    validations:
+      required: true
+
+  - type: textarea
+    id: scale
+    attributes:
+      label: How big is your GoCD instance?
+      description: |
+        Roughly how many pipelines, and how many are failing on a normal day. This decides whether
+        an idea is cheap or whether it costs a request per pipeline, which is the thing this
+        extension exists to avoid.

@@ -1,0 +1,75 @@
+name: Bug report
+description: Something in the extension behaves wrongly
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Never paste a token, a password, a cookie or a full internal URL here.** Redact the host.
+        If the problem cannot be explained without one, email it instead — see
+        [SECURITY.md](../blob/HEAD/SECURITY.md).
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect instead?
+      placeholder: The badge showed 3 while the popup showed 1 running.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the popup
+        2. Type a search that matches a few pipelines
+        3. Look at the toolbar badge
+    validations:
+      required: true
+
+  - type: input
+    id: gocd-version
+    attributes:
+      label: GoCD version
+      description: From /go/api/version, or the footer of the GoCD web UI.
+      placeholder: "23.5.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: auth
+    attributes:
+      label: Which sign-in mode?
+      description: A surprising number of problems happen in one mode only.
+      options:
+        - Use my existing GoCD login (nothing stored)
+        - Personal access token
+        - Username and password
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Extension version
+      description: From chrome://extensions.
+      placeholder: "1.1.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser
+      options: [Chrome, Microsoft Edge, Brave, Other Chromium]
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: |
+        A screenshot of the extension is worth more than a description. Errors from the service
+        worker console help too: chrome://extensions → GoCD Lens → "service worker".

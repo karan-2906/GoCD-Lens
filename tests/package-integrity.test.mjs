@@ -16,7 +16,8 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 function walk(dir, out = []) {
   for (const entry of readdirSync(dir)) {
-    if (['.git', '.githooks', 'docs', 'node_modules', 'site', 'tests', 'tools'].includes(entry)) continue;
+    if (['.git', '.github', '.githooks', 'docs', 'node_modules', 'site', 'tests', 'tools'].includes(entry))
+      continue;
     const full = join(dir, entry);
     if (statSync(full).isDirectory()) walk(full, out);
     else out.push(full);

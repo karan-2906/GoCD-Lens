@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/karan-2906/GoCD-Lens/security/advisories/new
+    about: Report privately instead. Please do not open a public issue for these.
+  - name: Question about GoCD itself
+    url: https://www.gocd.org/community/
+    about: This project only reads GoCD's API. Questions about GoCD belong with GoCD.

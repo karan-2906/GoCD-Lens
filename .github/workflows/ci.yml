@@ -1,0 +1,29 @@
+# The check branch protection requires. It is also the whole build: no compile
+# step, no bundler, nothing to cache -- just the suite the pre-commit hook runs.
+name: tests
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # No `npm ci`: there are no dependencies, and there is no lockfile to
+      # install from. That is deliberate, and package-integrity enforces it.
+      - name: Run the suite
+        run: npm test
+
+      - name: Check the package builds
+        run: npm run package
