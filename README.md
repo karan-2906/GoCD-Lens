@@ -143,29 +143,26 @@ which is the only check that covers both.
 
 ## Install
 
-It is not on the Chrome Web Store, so load it from disk:
+**[Add it from the Chrome Web Store](https://chromewebstore.google.com/detail/gocd-lens/hlpppcihkjhenaefanggabmhcmigppnd).** Chrome 116 or later; Edge and Brave install Chrome Web
+Store extensions directly.
+
+On first run the setup page opens. Enter the GoCD address you normally use — usually ending in
+`/go` — and press Connect.
+
+<details>
+<summary>Running it from source instead</summary>
+
+There is no build step. No npm install, no bundler, no transpiler — the files in `src/` are the
+files that run, so the folder you cloned is a working extension:
 
 1. Open `chrome://extensions`
 2. Turn on **Developer mode** (top right)
 3. Click **Load unpacked** and pick this folder
-4. The setup page opens. Enter your GoCD URL — the one you normally open, usually ending in `/go`.
 
-There is no build step. No npm install, no bundler, no transpiler — the files in `src/` are the
-files that run.
+`npm run package` produces the `gocd-lens.zip` that gets uploaded to the store.
 
-<details>
-<summary>Rolling it out to a team</summary>
-
-`npm run package` produces `gocd-lens.zip`. From there:
-
-- **Chrome Web Store, unlisted** — costs a one-off developer fee, gives everyone automatic updates
-  and a normal install. Usually the least friction.
-- **Group policy** — host the `.crx` internally and push it with `ExtensionInstallForcelist`.
-  If your org already manages Chrome, this is the clean route.
-- **Load unpacked from a shared drive** — free, but each person repeats the four steps above and
-  updates are manual.
-
-If your organisation blocks developer-mode extensions, the first two are your options.
+For a managed fleet there is a third route -- host the `.crx` internally and push it with
+`ExtensionInstallForcelist`. [`docs/PUBLISHING.md`](docs/PUBLISHING.md) covers it.
 
 </details>
 

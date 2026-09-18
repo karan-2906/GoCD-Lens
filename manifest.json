@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "GoCD Lens",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A friendly dashboard for GoCD pipelines that keeps working when the GoCD web UI doesn't.",
   "minimum_chrome_version": "116",
 
