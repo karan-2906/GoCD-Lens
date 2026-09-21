@@ -1,7 +1,7 @@
 # GoCD Lens
 
 > A browser extension (Chrome, Edge, Brave) that reads GoCD pipelines from the GoCD REST API and
-> draws its own dashboard, so it keeps working when the GoCD web UI does not. Everything it stores
+> draws its own dashboard: a modern, fast and efficient alternate UI for GoCD. Everything it stores
 > stays on the user's machine; the only host it contacts is the user's own GoCD server.
 
 GoCD Lens is free, open source and MIT licensed, developed in the open at
@@ -9,13 +9,13 @@ https://github.com/karan-2906/GoCD-Lens with issues and pull requests welcome. I
 It is the browser counterpart of lazygocd, a terminal UI for the same problem, and follows its
 endpoint choices, which were verified against a production GoCD 23.5.0 instance.
 
-## The problem it solves
+## What it is for
 
-GoCD's REST API and its web interface fail independently. The API keeps answering correctly
-through server restarts, slow page loads, and a dashboard that loses pipelines; the page in front
-of it does not. In production, GoCD's personalized-view lookup has broken and taken the whole web
-dashboard down with it while a plain `/api/dashboard` request answered perfectly. GoCD Lens only
-uses the API.
+A second dashboard for GoCD, aimed at instances with thousands of pipelines, where the questions
+are "what is running", "what is red" and "which stage broke" — and the answers should take one
+request and no scrolling. GoCD Lens reads GoCD's public REST API and renders its own UI, so the
+whole fleet loads at once, a pipeline is four keystrokes away, and the common actions (run, pause,
+re-run selected jobs, tail a log) are on the screen already in front of the user.
 
 ## What it does
 
@@ -34,7 +34,6 @@ uses the API.
   download and an artifact tree.
 - Optional notifications when a watched pipeline starts or finishes, with a bundled chime.
 - A toolbar badge counting what is running, turning red with a failure count when nothing is.
-- An "is it GoCD, or is it me?" diagnostic that probes the API and the web UI separately.
 
 ## Scale and server cost
 

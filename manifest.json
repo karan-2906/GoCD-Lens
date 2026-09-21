@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "GoCD Lens",
-  "version": "1.1.0",
-  "description": "A friendly dashboard for GoCD pipelines that keeps working when the GoCD web UI doesn't.",
+  "version": "1.1.1",
+  "description": "A modern, fast and efficient alternate UI for GoCD. Your whole pipeline fleet in one tab, straight from the GoCD API.",
   "minimum_chrome_version": "116",
 
   "permissions": ["storage", "alarms", "notifications", "offscreen"],

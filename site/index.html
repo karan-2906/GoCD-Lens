@@ -7,7 +7,7 @@
     <title>GoCD Lens — your GoCD pipelines, straight from the API</title>
     <meta
       name="description"
-      content="A browser extension that reads the GoCD REST API and draws its own dashboard, so it keeps working when the GoCD web UI doesn't. Nothing leaves your machine."
+      content="A modern, fast and efficient alternate UI for GoCD — the whole pipeline fleet in one request, per-stage status and live console logs. MIT licensed. No analytics."
     />
     <link rel="canonical" href="https://go-cd-lens.vercel.app/" />
     <meta name="theme-color" content="#0d1117" />
@@ -27,7 +27,7 @@
     <meta property="og:title" content="GoCD Lens — your GoCD pipelines, straight from the API" />
     <meta
       property="og:description"
-      content="Reads the same REST API your GoCD dashboard does and draws its own, so it keeps working when the web UI doesn't. No content scripts, no analytics, nothing synced."
+      content="A modern, fast and efficient alternate UI for GoCD. One request loads every pipeline, every card shows its stages, and four letters find the one you want. MIT licensed. No analytics."
     />
     <meta property="og:image" content="https://go-cd-lens.vercel.app/img/og.png" />
     <meta property="og:image:width" content="1200" />
@@ -37,7 +37,7 @@
     <meta name="twitter:title" content="GoCD Lens — your GoCD pipelines, straight from the API" />
     <meta
       name="twitter:description"
-      content="Reads the same REST API your GoCD dashboard does and draws its own, so it keeps working when the web UI doesn't."
+      content="A modern, fast and efficient alternate UI for GoCD. One request loads every pipeline, and every card shows its stages. MIT licensed. No analytics."
     />
     <meta name="twitter:image" content="https://go-cd-lens.vercel.app/img/og.png" />
 
@@ -60,13 +60,13 @@
         "name": "GoCD Lens",
         "applicationCategory": "DeveloperApplication",
         "operatingSystem": "Chrome 116+, Microsoft Edge, Brave",
-        "description": "A browser extension that reads GoCD pipelines from the GoCD REST API and draws its own dashboard, so it keeps working when the GoCD web UI does not. All data stays on the user's machine.",
+        "description": "A modern, fast and efficient alternate UI for GoCD. It reads pipelines from the GoCD REST API and draws its own dashboard in the browser, built for instances with thousands of pipelines. MIT licensed, no analytics, and all data stays on the user's machine.",
         "url": "https://go-cd-lens.vercel.app/",
-        "softwareVersion": "1.1.0",
+        "softwareVersion": "1.1.1",
         "license": "https://opensource.org/licenses/MIT",
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
         "featureList": [
-          "Reads the GoCD REST API directly instead of the GoCD web UI",
+          "Reads pipelines straight from the GoCD REST API",
           "One request loads every pipeline group and its latest run",
           "Per-stage status strip on every pipeline card",
           "Fuzzy search across pipeline and group names",
@@ -85,10 +85,10 @@
         "mainEntity": [
           {
             "@type": "Question",
-            "name": "Does GoCD Lens work when the GoCD web UI is down?",
+            "name": "What does GoCD Lens add over the GoCD dashboard?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "That is what it is for. GoCD's REST API and its web interface fail independently — in production we have seen the view lookup break and take the dashboard down with it while a plain API request answered perfectly. GoCD Lens only uses the API, and its built-in check probes the API and the web UI separately so you can tell which one is broken."
+              "text": "It is a separate dashboard built for instances with thousands of pipelines. One request loads every group, pipeline and latest run; each card carries a per-stage strip, so you can see which stage broke without opening anything; fuzzy search finds a pipeline in four letters; and starring, watching, re-running selected jobs in a stage and tailing a console log are all on the screen you are already on. It reads GoCD's public REST API, so it shows the same data your server already has."
             }
           },
           {
@@ -183,9 +183,9 @@
         <p class="eyebrow">Chrome · Edge · Brave</p>
         <h1>Your GoCD pipelines,<br /><span class="grad">straight from the API</span>.</h1>
         <p class="lede">
-          GoCD's API keeps answering through server restarts, slow page loads and the dashboard's
-          habit of losing your pipelines. The web UI in front of it does not. GoCD Lens skips that
-          page entirely and draws its own — so what you see is whatever the server actually knows.
+          A modern, fast alternate UI for GoCD, built for instances with thousands of pipelines.
+          One request loads the whole fleet, every card shows where a run got to stage by stage,
+          and four letters are enough to find the one you want.
         </p>
         <div class="cta">
           <a class="btn btn-primary" href="https://chromewebstore.google.com/detail/gocd-lens/hlpppcihkjhenaefanggabmhcmigppnd"
@@ -455,13 +455,14 @@
         <h2>Questions people ask</h2>
 
         <details>
-          <summary>Does it work when the GoCD web UI is down?</summary>
+          <summary>What does it add over the GoCD dashboard?</summary>
           <p>
-            That is what it is for. The API and the web interface fail independently — we have
-            watched GoCD's view lookup break and take the dashboard down with it while a plain
-            <code>/api/dashboard</code> request answered perfectly. GoCD Lens only uses the API, and
-            its <em>"is it GoCD, or is it me?"</em> check probes the API and the web UI separately
-            and times both, so you can tell which one is actually broken.
+            It is a separate dashboard built for big instances. One
+            <code>/api/dashboard</code> call loads every group, pipeline and latest run; each card
+            carries a per-stage strip, so you see which stage broke without opening anything; four
+            letters find a pipeline; and starring, watching, re-running selected jobs in a stage and
+            tailing a console log all happen on the screen you are already on. It reads GoCD's
+            public REST API, so the data is the same data your server already has.
           </p>
         </details>
 

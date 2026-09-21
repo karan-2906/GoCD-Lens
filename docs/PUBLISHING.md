@@ -82,14 +82,14 @@ GoCD Lens
 **Summary** (132 characters max — this is the one-liner in search results)
 
 ```
-See your GoCD pipelines even when the GoCD web UI won't load. Reads the API directly. Nothing leaves your machine.
+A modern, fast and efficient alternate UI for GoCD. Your whole pipeline fleet in one tab, straight from the GoCD API.
 ```
 
 **Description** (16,000 characters max)
 
 ```
-GoCD Lens reads your GoCD server's REST API and draws its own dashboard, so it keeps working when
-the GoCD web interface does not.
+GoCD Lens is a modern, fast and efficient alternate UI for GoCD. It reads your GoCD server's REST
+API and draws its own dashboard in the browser, built for instances with thousands of pipelines.
 
 WHAT IT DOES
 
@@ -108,8 +108,6 @@ WHAT IT DOES
 • Watch a pipeline and be told when a run starts and finishes — whether it passed and, if not,
   which stage went red — with an optional short chime.
 • A toolbar badge that counts what is running, and turns red with a failure count when nothing is.
-• An "is it GoCD, or is it me?" check that probes the API and the web UI separately and times
-  both, so you can tell a broken dashboard from a broken pipeline.
 
 BUILT FOR A BIG INSTANCE
 

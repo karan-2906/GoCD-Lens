@@ -448,7 +448,7 @@ function promoTile({ width, height, shot }) {
       <img src="../../icons/icon128.png" alt="">
       <h1>GoCD Lens</h1>
     </div>
-    <p class="tag">Your GoCD pipelines, straight from the API &mdash; <b>still there when the GoCD web UI isn't</b>.</p>
+    <p class="tag">A modern, fast alternate UI for GoCD &mdash; <b>your whole pipeline fleet in one request</b>.</p>
     <div class="strip">
       <div class="seg" style="background: var(--pass)"></div>
       <div class="seg" style="background: var(--pass)"></div>
