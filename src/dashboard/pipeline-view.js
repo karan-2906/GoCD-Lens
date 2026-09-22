@@ -20,6 +20,8 @@ import {
 import {
   state,
   navigate,
+  goBack,
+  backTarget,
   statusPill,
   pipelineByName,
   groupOf,
@@ -153,11 +155,18 @@ function header(name, pipeline) {
   const starred = isFavorite(name);
   const watching = isWatched(name);
   const group = groupOf(name);
+  const previous = backTarget();
 
   return el(
     'div',
     { class: 'detail-head' },
-    el('button', { class: 'icon-btn', title: 'Back to all pipelines', onclick: () => navigate({ kind: 'list' }) }, icon('chevron-left')),
+    // Says where it goes, because from here it is not always the list: open the
+    // run that triggered this one and back is the pipeline you came from.
+    el(
+      'button',
+      { class: 'icon-btn', title: previous ? `Back to ${previous}` : 'Back to all pipelines', onclick: () => goBack() },
+      icon('chevron-left'),
+    ),
     el(
       'div',
       {},

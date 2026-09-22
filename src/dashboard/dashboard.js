@@ -21,6 +21,8 @@ import {
   onFreshness,
   rerender,
   navigate,
+  goBack,
+  resetToList,
   refresh,
   counts,
   matchingPipelines,
@@ -171,7 +173,7 @@ function wireChrome() {
   const search = $('#search');
   search.addEventListener('input', () => {
     state.search = search.value;
-    if (state.route.kind !== 'list') state.route = { kind: 'list' };
+    if (state.route.kind !== 'list') resetToList();
     render();
   });
 
@@ -307,7 +309,7 @@ function onKeydown(event) {
       else event.target.blur();
       return;
     }
-    if (state.route.kind !== 'list') navigate({ kind: 'list' });
+    if (state.route.kind !== 'list') goBack();
     return;
   }
 
@@ -417,7 +419,7 @@ function paintFilters() {
           'aria-pressed': String(active),
           onclick: () => {
             state.filter = active && filter.id !== 'all' ? 'all' : filter.id;
-            if (state.route.kind !== 'list') state.route = { kind: 'list' };
+            if (state.route.kind !== 'list') resetToList();
             render();
           },
         },

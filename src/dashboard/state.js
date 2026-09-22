@@ -55,7 +55,52 @@ export function rerender() {
   renderFn();
 }
 
+/**
+ * Pipelines you passed through to reach the one on screen, oldest first.
+ *
+ * Only pipeline-to-pipeline hops go in here: the list is the root of the app,
+ * so arriving there empties it. A pipeline page can open another pipeline --
+ * the run that triggered this one -- and back has to mean "the one I came
+ * from", not "the list", or following a chain upstream is a one-way trip.
+ *
+ * Capped because the chain can be walked in circles: A triggered by B, open B,
+ * open the run of A that triggered it, and so on. Dropping the oldest entry
+ * means back always terminates at the list.
+ */
+const trail = [];
+const TRAIL_MAX = 10;
+
 export function navigate(route) {
+  if (route.kind === 'list') trail.length = 0;
+  else if (state.route.kind === 'pipeline' && state.route.name !== route.name) {
+    trail.push(state.route.name);
+    if (trail.length > TRAIL_MAX) trail.shift();
+  }
+  setRoute(route);
+}
+
+/** Up one level: the pipeline that opened this one, else the list. */
+export function goBack() {
+  const previous = trail.pop();
+  setRoute(previous ? { kind: 'pipeline', name: previous } : { kind: 'list' });
+}
+
+/** What `goBack()` would land on, so the button can say where it goes. */
+export function backTarget() {
+  return trail.length ? trail[trail.length - 1] : null;
+}
+
+/**
+ * Drop to the list without redrawing, for callers that are about to render
+ * anyway. They cannot just assign `state.route`: a trail left behind would
+ * send the next back press to a pipeline the user has already left.
+ */
+export function resetToList() {
+  state.route = { kind: 'list' };
+  trail.length = 0;
+}
+
+function setRoute(route) {
   state.route = route;
   rerender();
   document.querySelector('.content')?.scrollTo({ top: 0 });
@@ -584,7 +629,7 @@ export async function selectView(name, { resetContext = true } = {}) {
     // it back to the list would narrow the new view down to what you just left.
     // The sidebar box only ever filters, so it is never a leftover.
     if (state.route.kind !== 'list') state.search = '';
-    state.route = { kind: 'list' };
+    resetToList();
   }
   rerender();
   await refresh({ force: true, view: name ?? null });
