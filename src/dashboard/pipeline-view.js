@@ -58,10 +58,28 @@ const selections = new Map();
 const selectionKey = (pipeline, counter, stage, stageCounter) =>
   [pipeline, counter, stage, stageCounter].join('\u0000');
 
+/**
+ * Which attempt of a re-run stage is on screen, for the stages where that is
+ * not the latest one. Only an *older* attempt is ever pinned here: picking the
+ * newest drops the entry, so a re-run you start yourself carries the card on to
+ * the attempt it creates instead of stranding you on the one you were reading.
+ *
+ * Outside the DOM for the same reason the re-run ticks are: a poll rebuilds
+ * this whole screen every few seconds.
+ */
+const attemptChoice = new Map();
+
+/** Fetched attempts. A finished attempt never changes, so one request each. */
+const attemptCache = new Map();
+
+const attemptKey = (pipeline, counter, stage) => [pipeline, counter, stage].join('\u0000');
+
 export function renderPipeline(host, name) {
   // Bound the store: only the pipeline on screen can have a live selection.
-  for (const key of selections.keys()) {
-    if (!key.startsWith(`${name}\u0000`)) selections.delete(key);
+  for (const store of [selections, attemptChoice, attemptCache]) {
+    for (const key of store.keys()) {
+      if (!key.startsWith(`${name}\u0000`)) store.delete(key);
+    }
   }
 
   const pipeline = pipelineByName(name);
@@ -395,14 +413,23 @@ function runPanel(name, run) {
 }
 
 function stageCard(pipeline, run, stage) {
-  const status = stageStatus(stage);
-  const stageCounter = String(stage.counter ?? '1');
-  const manualPending = stage.approval_type === 'manual' && status === 'Unknown';
-  const runnable = (stage.jobs || []).filter((job) => job?.name);
+  const latest = Number(stage.counter ?? 1);
+  const attemptsKey = attemptKey(pipeline, run.counter, stage.name);
+  const showing = Math.min(attemptChoice.get(attemptsKey) ?? latest, latest);
+  const older = showing !== latest;
+  // The run payload describes the latest attempt only, so an older one has to
+  // be fetched. Asking for it is what puts it in the cache.
+  const fetched = older ? attemptFor(pipeline, run.counter, stage.name, showing) : null;
+  const shown = older ? fetched.stage : stage;
+
+  const status = stageStatus(shown);
+  const stageCounter = String(showing);
+  const manualPending = !older && stage.approval_type === 'manual' && status === 'Unknown';
+  const runnable = (shown?.jobs || []).filter((job) => job?.name);
 
   // A stage with one job has nothing to choose between, and a stage that has not
   // run or is still running cannot be re-run at all.
-  const picking = !isActive(status) && status !== 'Unknown' && runnable.length > 1;
+  const picking = !older && !isActive(status) && status !== 'Unknown' && runnable.length > 1;
 
   /** Job name -> its checkbox, so the button can read the selection. */
   const boxes = new Map();
@@ -461,11 +488,13 @@ function stageCard(pipeline, run, stage) {
     );
   }
 
-  if (isActive(status)) {
+  // An older attempt is finished, and GoCD only ever re-runs from the latest
+  // one -- both of these would act on a stage that is not the one being read.
+  if (!older && isActive(status)) {
     actions.append(
       el('button', { class: 'btn btn-sm', title: 'Cancel this running stage', onclick: () => cancelStage({ pipeline, counter: run.counter, stage: stage.name, stageCounter }) }, icon('stop', { size: 12 }), 'Stop'),
     );
-  } else if (status !== 'Unknown') {
+  } else if (!older && status !== 'Unknown') {
     actions.append(
       el(
         'button',
@@ -495,7 +524,10 @@ function stageCard(pipeline, run, stage) {
   );
 
   const jobs = el('div', { class: 'job-list' });
-  for (const job of stage.jobs || []) {
+  if (fetched?.loading) jobs.append(el('div', { class: 'job-row faint', text: `Loading attempt ${showing}...` }));
+  else if (fetched?.error) jobs.append(el('div', { class: 'job-row faint', text: fetched.error }));
+
+  for (const job of shown?.jobs || []) {
     const jobState = jobStatus(job);
     const open = el(
       'button',
@@ -545,12 +577,75 @@ function stageCard(pipeline, run, stage) {
       'div',
       { class: 'stage-head' },
       el('span', { class: 'stage-name', text: stage.name }),
-      statusPill(status),
+      // An attempt still in flight has no status to report, and `stageStatus`
+      // reads that absence as "Never run" -- which is a lie about a stage that
+      // finished hours ago.
+      !fetched?.loading && statusPill(status),
+      latest > 1 && attemptPicker(attemptsKey, latest, showing),
       manualPending && el('span', { class: 'manual-gate' }, icon('lock', { size: 12 }), 'Waiting for approval'),
       actions,
     ),
     jobs,
   );
+}
+
+/**
+ * A stage that has been re-run has attempts behind the one the run describes.
+ * Their logs are the ones that say why it was re-run, and nothing else in the
+ * product can reach them.
+ */
+function attemptPicker(key, latest, showing) {
+  const select = el('select', {
+    class: 'attempt-picker',
+    title: 'This stage ran more than once. Pick which attempt to show.',
+    onchange: () => {
+      const picked = Number(select.value);
+      // Only an older attempt is remembered; the latest is the default, and
+      // staying on it means a fresh re-run is what you see next.
+      if (picked >= latest) attemptChoice.delete(key);
+      else attemptChoice.set(key, picked);
+      rerender();
+    },
+  });
+
+  for (let n = latest; n >= 1; n -= 1) {
+    select.append(
+      el('option', {
+        value: String(n),
+        text: n === latest ? `Attempt ${n} (latest)` : `Attempt ${n}`,
+        selected: n === showing,
+      }),
+    );
+  }
+
+  return select;
+}
+
+/**
+ * The cached attempt, starting the fetch the first time it is asked for. A
+ * finished attempt is immutable, so it is never re-fetched -- which matters
+ * because a poll asks for this again every few seconds.
+ */
+function attemptFor(pipeline, counter, stage, stageCounter) {
+  const key = `${attemptKey(pipeline, counter, stage)}\u0000${stageCounter}`;
+  const hit = attemptCache.get(key);
+  if (hit) return hit;
+
+  const entry = { loading: true, stage: null, error: null };
+  attemptCache.set(key, entry);
+  send('stageInstance', { pipeline, counter, stage, stageCounter })
+    .then((data) => {
+      entry.stage = data;
+    })
+    .catch((err) => {
+      entry.error = explain(err);
+    })
+    .finally(() => {
+      entry.loading = false;
+      rerender();
+    });
+
+  return entry;
 }
 
 // -------------------------------------------------------------- materials

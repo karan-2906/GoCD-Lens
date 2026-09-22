@@ -907,6 +907,21 @@ body {
   font-weight: 580;
 }
 
+/*
+ * Compact enough to sit inside the stage header beside the status pill, which
+ * the full-width form select this inherits from is not.
+ */
+.attempt-picker {
+  width: auto;
+  padding: 2px 4px 2px 8px;
+  font-size: 12px;
+  font-weight: 560;
+  color: var(--text-faint);
+  background: transparent;
+  border-color: var(--border);
+  cursor: pointer;
+}
+
 .stage-actions {
   display: flex;
   gap: 5px;

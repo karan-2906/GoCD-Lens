@@ -225,6 +225,26 @@ export class GoCdClient {
     return data;
   }
 
+  /**
+   * One specific attempt of a stage, with the jobs that ran in it.
+   *
+   * The run history only ever carries a stage's *latest* instance, so once a
+   * stage has been re-run the attempt before it is invisible there -- and that
+   * is usually the interesting one, because it is why the re-run happened. The
+   * file server keeps every attempt's logs; this is what names the jobs to ask
+   * for. A re-run of selected jobs carries the others over, so two attempts of
+   * the same stage do not necessarily hold the same set of jobs.
+   */
+  async stageInstance(pipeline, counter, stage, stageCounter) {
+    const { data } = await this.#send(
+      'GET',
+      `/api/stages/${encodeSegment(pipeline)}/${encodeURIComponent(counter)}` +
+        `/${encodeSegment(stage)}/${encodeSegment(stageCounter)}`,
+      { version: 3 },
+    );
+    return data;
+  }
+
   /** The user's personalized dashboard views -- the same tabs as the web UI. */
   async views() {
     const { data, etag } = await this.#send('GET', '/api/internal/pipeline_selection', {

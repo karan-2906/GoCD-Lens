@@ -83,6 +83,17 @@ before(async () => {
       return json(res, 200, { name: 'web-app', counter: 42, stages: [] });
     }
 
+    // One attempt of a stage. The counter in the path is which attempt, so the
+    // run's own payload (always the latest) cannot answer for an earlier one.
+    if (req.method === 'GET' && /^\/go\/api\/stages\/web-app\/42\/integration\/\d+$/.test(path)) {
+      return json(res, 200, {
+        name: 'integration',
+        counter: Number(path.split('/').pop()),
+        result: 'Failed',
+        jobs: [{ name: 'api-tests', state: 'Completed', result: 'Failed' }],
+      });
+    }
+
     if (req.method === 'POST' && path === '/go/api/pipelines/web-app/schedule') {
       let body = '';
       req.on('data', (chunk) => (body += chunk));
@@ -323,6 +334,27 @@ test('a console log fetch at offset zero sends no cursor at all', async () => {
   const request = lastRequest('/go/files/web-app/42/build/1/compile/cruise-output/console.log');
   assert.ok(!request.url.includes('startLineNumber'));
   assert.ok(!request.headers.accept?.includes('vnd.go.cd'), 'the file server is not the versioned API');
+});
+
+test('an earlier attempt of a re-run stage is read from the stage instance', async () => {
+  seen = [];
+  const stage = await tokenClient().stageInstance('web-app', 42, 'integration', '1');
+
+  const request = lastRequest('/go/api/stages/web-app/42/integration/1');
+  assert.equal(request.method, 'GET', 'reading an attempt must not be one of the run verbs');
+  assert.equal(request.headers.accept, 'application/vnd.go.cd.v3+json');
+  assert.ok(!request.headers['x-gocd-confirm'], 'a read is not a mutation');
+  assert.equal(stage.jobs[0].name, 'api-tests');
+});
+
+test('the attempt number is in the path, so attempts do not collapse into one', async () => {
+  seen = [];
+  const client = tokenClient();
+  const first = await client.stageInstance('web-app', 42, 'integration', '1');
+  const third = await client.stageInstance('web-app', 42, 'integration', '3');
+
+  assert.equal(first.counter, 1);
+  assert.equal(third.counter, 3, 'asking for attempt 3 must not answer with attempt 1');
 });
 
 test('the artifact listing comes from the file server, not the JSON API', async () => {

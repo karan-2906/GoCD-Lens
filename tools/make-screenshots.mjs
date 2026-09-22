@@ -197,7 +197,9 @@ function historyRuns(pipeline) {
       name,
       status,
       result: status,
-      counter: 1,
+      // The newest run's failed stage was re-run, which is what puts an attempt
+      // picker on its card -- the one path that reaches an earlier attempt.
+      counter: name === 'integration' && i === 0 ? 3 : 1,
       approval_type: si === 2 ? 'manual' : 'success',
       jobs:
         name === 'integration'
@@ -291,6 +293,19 @@ const REPLIES = {
   views: VIEWS,
   history: { runs: historyRuns('checkout-service'), next: null },
   instance: { counter: 2390, label: '2390', stages: historyRuns('checkout-service')[0].stages },
+  // The run payload only carries a stage's latest attempt, so this is what an
+  // earlier one is read from.
+  stageInstance: {
+    name: 'integration',
+    counter: 1,
+    result: 'Failed',
+    jobs: [
+      { name: 'api-tests', state: 'Completed', result: 'Failed' },
+      { name: 'browser-tests-1', state: 'Completed', result: 'Failed' },
+      { name: 'browser-tests-2', state: 'Completed', result: 'Passed' },
+      { name: 'browser-tests-3', state: 'Completed', result: 'Failed' },
+    ],
+  },
   consoleLog: { text: LOG, complete: true, nextLine: 36 },
   artifacts: ARTIFACTS,
   webUrl: 'https://gocd.internal.example.com/go/pipelines',

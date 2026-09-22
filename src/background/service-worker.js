@@ -989,6 +989,11 @@ const handlers = {
     return result;
   },
 
+  async stageInstance({ pipeline, counter, stage, stageCounter }) {
+    const api = await client();
+    return api.stageInstance(pipeline, counter, stage, stageCounter);
+  },
+
   async artifacts({ pipeline, counter, stage, stageCounter, job }) {
     const api = await client();
     return api.artifacts(pipeline, counter, stage, stageCounter, job);
