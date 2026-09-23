@@ -1,11 +1,16 @@
 # GoCD Lens
 
-**A Chrome extension that shows your GoCD pipelines even when the GoCD web UI won't.**
+**A modern, fast and efficient alternate UI for GoCD.**
 
-GoCD's API keeps answering correctly through server restarts, slow page loads, and the
-dashboard's habit of losing your pipelines. The web UI in front of it does not. GoCD Lens skips
-that page entirely: it reads the same REST API and draws its own dashboard, so what you see is
-whatever the server actually knows.
+GoCD Lens is a browser extension for Chrome, Edge and Brave that reads your GoCD server's REST API
+and draws its own dashboard. One request loads every pipeline group and its latest run; each card
+carries a per-stage strip, so you can see *where* something broke without opening it; four letters
+find a pipeline among thousands; and console logs tail live while a job runs.
+
+It is built for large installations -- thousands of pipelines, hundreds failing at any time --
+where nothing can afford to cost a request per pipeline.
+
+[**Add to Chrome**](https://chromewebstore.google.com/detail/gocd-lens/hlpppcihkjhenaefanggabmhcmigppnd) &nbsp;·&nbsp; [Website](https://go-cd-lens.vercel.app) &nbsp;·&nbsp; MIT licensed
 
 Everything it stores stays on your machine. It asks for no access to any website until you name
 your GoCD server, has no content scripts, loads no remote code, and sends nothing anywhere except
