@@ -757,16 +757,6 @@ test('the badge follows the active view, because that is what you are watching',
   assert.equal(calls.badgeText.at(-1), '1', 'only the view\u2019s pipelines are counted');
 });
 
-test('saving a view writes it to GoCD and hands back the fresh list', async () => {
-  await connect();
-  const result = await send('saveView', { name: 'Release', pipelines: ['web-app'] });
-  assert.ok(Array.isArray(result.filters), 'the caller should not have to re-ask');
-  assert.ok(
-    requests.some((r) => r.options.method === 'PUT' && r.url.includes('pipeline_selection')),
-    'it must reach the server, not just this machine',
-  );
-});
-
 // ------------------------------------------------- the watch list
 
 /**

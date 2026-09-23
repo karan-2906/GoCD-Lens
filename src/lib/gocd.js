@@ -245,27 +245,27 @@ export class GoCdClient {
     return data;
   }
 
-  /** The user's personalized dashboard views -- the same tabs as the web UI. */
+  /**
+   * The user's personalized dashboard views -- the same tabs as the web UI.
+   *
+   * THE ONE UNDOCUMENTED ENDPOINT IN THIS CLIENT. `/api/internal/*` is named
+   * internal because it is coupled to GoCD's own UI: no contract, no version
+   * guarantee, removable without notice. A GoCD maintainer has said as much
+   * about this exact endpoint, and he is right.
+   *
+   * It stays only because it is a read, and because losing it costs nothing but
+   * the feature it serves: the caller catches the failure and carries on with
+   * `viewsAvailable = false`, and the two built-in views filter client-side and
+   * never come here at all. Nothing else in the product depends on it.
+   *
+   * If GoCD ever documents a way to read a user's dashboard views, this should
+   * move to it the same day.
+   */
   async views() {
     const { data, etag } = await this.#send('GET', '/api/internal/pipeline_selection', {
       version: 1,
     });
     return { filters: data?.filters || [], etag: etag ? etag.replace('--gzip', '') : null };
-  }
-
-  async saveView(name, pipelines) {
-    const { filters, etag } = await this.views();
-    const next = { name, type: 'whitelist', state: [], pipelines };
-    const idx = filters.findIndex((f) => f.name === name);
-    if (idx === -1) filters.push(next);
-    else filters[idx] = next;
-    const headers = { 'Content-Type': 'application/json' };
-    if (etag) headers['If-Match'] = etag;
-    await this.#send('PUT', '/api/internal/pipeline_selection', {
-      version: 1,
-      headers,
-      body: JSON.stringify({ filters }),
-    });
   }
 
   /** Artifact tree for one job, from the plain file-server .json listing. */

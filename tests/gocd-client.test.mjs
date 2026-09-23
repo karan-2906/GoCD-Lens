@@ -362,26 +362,20 @@ test('the artifact listing comes from the file server, not the JSON API', async 
   assert.equal(tree[0].name, 'dist');
 });
 
-test('saving a view round-trips the existing filters and locks with If-Match', async () => {
+// `/api/internal/*` is undocumented and uncontracted, so the client reads it
+// and never writes to it. A write is the half that can corrupt a user's own
+// dashboard configuration if the shape changes under us.
+test('nothing in the client writes to an internal endpoint', async () => {
   seen = [];
-  await tokenClient().saveView('Release', ['web-app', 'api']);
-  const put = seen.filter((r) => r.method === 'PUT').pop();
-  assert.equal(put.headers['if-match'], 'sel-1', 'the --gzip suffix must be stripped or GoCD rejects it');
+  const client = tokenClient();
+  await client.views();
+  await client.dashboard();
+  await client.history('web-app');
 
-  const body = JSON.parse(put.body);
-  assert.equal(body.filters.length, 2, 'the existing view must survive the round trip');
-  assert.deepEqual(
-    body.filters.find((f) => f.name === 'Release'),
-    { name: 'Release', type: 'whitelist', state: [], pipelines: ['web-app', 'api'] },
-  );
-});
-
-test('saving over an existing view replaces it rather than duplicating it', async () => {
-  seen = [];
-  await tokenClient().saveView('Mine', ['only-this']);
-  const body = JSON.parse(seen.filter((r) => r.method === 'PUT').pop().body);
-  assert.equal(body.filters.length, 1);
-  assert.deepEqual(body.filters[0].pipelines, ['only-this']);
+  const internal = seen.filter((r) => r.url.includes('/api/internal/'));
+  assert.ok(internal.length > 0, 'views does read one, so this test is proving something');
+  assert.deepEqual([...new Set(internal.map((r) => r.method))], ['GET']);
+  assert.equal(typeof client.saveView, 'undefined', 'the write was removed, not just unwired');
 });
 
 test('errors are classified so the UI can say something a person can act on', async () => {

@@ -980,15 +980,6 @@ const handlers = {
     return result;
   },
 
-  async saveView({ name, pipelines }) {
-    const api = await client();
-    await api.saveView(name, pipelines);
-    // Hand back the fresh list so the caller does not have to re-ask.
-    const result = await api.views();
-    await setViewDefinitions(result.filters);
-    return result;
-  },
-
   async stageInstance({ pipeline, counter, stage, stageCounter }) {
     const api = await client();
     return api.stageInstance(pipeline, counter, stage, stageCounter);

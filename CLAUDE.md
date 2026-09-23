@@ -298,7 +298,7 @@ Each of these existed and was removed for a reason:
 | **Badge source `auto`** | Silently changed what it counted the moment you starred something. |
 | **`notifyScope` + `notifyOnRecovery`** | A scope dropdown and a direction tick collapsed into one *Also notify for starred pipelines*. "All pipelines" was unusable at 900 failures anyway. |
 | **OS notification-settings buttons** | Chrome cannot open System Settings; the URL schemes may be refused silently. The click-path is printed as text instead. |
-| **Save as a GoCD view (`+` beside the picker)** | Removed on request; the picker is a switch, not an editor. As with *Run with variables*, only the UI went: `saveView()` is still in `gocd.js` and the worker. |
+| **Save as a GoCD view (`+` beside the picker)** | Removed on request; the picker is a switch, not an editor. The UI went first and `saveView()` followed: it was the only **write** to `/api/internal/*`, an endpoint with no contract and no version guarantee, kept alive by nothing but optionality. A GoCD maintainer flagged that dependency on a sibling project ([gocd/gocd#14575](https://github.com/gocd/gocd/discussions/14575)) and was right. The read stays, isolated and degrading to `viewsAvailable = false`; a test now pins that `/api/internal/*` is GET-only. |
 | **Per-section row cap (*Show all N*)** | Sections capped at 30 cards. Groups already start collapsed, so expanding one is a deliberate ask; the cap answered it with another button. |
 | **Derived background interval** | Deriving the background cadence from the open-tab interval meant everyone polling every minute. |
 
