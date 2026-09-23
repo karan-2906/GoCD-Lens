@@ -1,0 +1,7 @@
+# Who reviews what. The glob is the whole repository: this is a one-maintainer
+# project, and a pattern list that pretends otherwise would go stale the first
+# time a directory moved.
+#
+# On its own this file only decides who gets *asked*. It becomes binding when
+# the default branch has "Require review from Code Owners" turned on.
+* @karan-2906

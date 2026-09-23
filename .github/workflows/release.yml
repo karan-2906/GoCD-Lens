@@ -1,0 +1,51 @@
+# Cuts a GitHub release from a tag, so the zip uploaded to the Chrome Web Store
+# can be checked against the source it was built from. Nobody can verify a store
+# listing by reading it; a tagged commit plus a checksum is the only thing that
+# ties the two together.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run the suite
+        run: npm test
+
+      # A tag that disagrees with the manifest names a version the store will
+      # never serve, and the release becomes a lie about which code shipped.
+      - name: Check the tag matches the manifest
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          manifest="v$(node -p "require('./manifest.json').version")"
+          if [ "$manifest" != "$REF_NAME" ]; then
+            echo "tag $REF_NAME does not match manifest version $manifest" >&2
+            exit 1
+          fi
+
+      - name: Build the package
+        run: npm run package
+
+      - name: Checksum it
+        run: shasum -a 256 gocd-lens.zip > gocd-lens.zip.sha256
+
+      # `gh` ships on the runner, so this needs no third-party action -- which
+      # is the same argument the extension makes about remote code.
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REF_NAME: ${{ github.ref_name }}
+        run: gh release create "$REF_NAME" gocd-lens.zip gocd-lens.zip.sha256 --generate-notes

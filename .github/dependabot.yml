@@ -1,0 +1,13 @@
+# There are no npm dependencies to watch, and a test fails the build if one ever
+# appears. What this repository does depend on is the handful of Actions its
+# workflows pin, and those are its whole supply chain: an action runs inside the
+# job with the job's token.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: 'ci'

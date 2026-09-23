@@ -1,0 +1,42 @@
+# Static analysis of the code itself.
+#
+# The obvious thing to copy from a sibling project is a dependency scan, but
+# there is nothing here to scan: no dependencies, no lockfile, and a test that
+# fails if either appears. An SBOM of an empty dependency tree finds nothing and
+# costs a token in the repository secrets. CodeQL reads the source instead,
+# which is where this project's risk actually lives -- build logs are the least
+# trustworthy data in the product and they reach the screen through code in
+# src/.
+#
+# This needs the repository to be public (or GitHub Advanced Security): code
+# scanning cannot upload results from a private repository without it.
+name: CodeQL
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+  schedule:
+    # Once a week, because an advisory can land long after a file last changed.
+    - cron: '0 3 * * 1'
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  analyze:
+    name: Analyse JavaScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          # The default suite skips checks that are noisier but catch more; in a
+          # codebase of this size the noise is affordable.
+          queries: security-extended
+
+      # No build step to autobuild: the files in src/ are the files that run.
+      - uses: github/codeql-action/analyze@v3
