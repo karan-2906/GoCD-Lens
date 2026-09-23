@@ -75,6 +75,6 @@ component, no account, no sign-up.
 
 - Chrome Web Store: https://chromewebstore.google.com/detail/gocd-lens/hlpppcihkjhenaefanggabmhcmigppnd
 - Source code: https://github.com/karan-2906/GoCD-Lens
-- Privacy policy: https://go-cd-lens.vercel.app/privacy
+- Privacy policy: https://gocd-lens.vercel.app/privacy
 - lazygocd (terminal UI, same problem): https://github.com/Sahilll15/lazygocd
 - GoCD: https://www.gocd.org/

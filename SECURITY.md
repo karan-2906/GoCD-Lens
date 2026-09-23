@@ -40,7 +40,7 @@ permissions. Particularly interesting:
 - **The credential not being encrypted at rest.** This is known, documented, and unavoidable:
   `chrome.storage.local` is not encrypted, and browser extensions have no access to the operating
   system keychain. It is why "use my existing GoCD login", which stores nothing, is the default.
-  See the [privacy policy](https://go-cd-lens.vercel.app/privacy).
+  See the [privacy policy](https://gocd-lens.vercel.app/privacy).
 - **Anyone with local access to an unlocked machine.** An extension cannot defend against the
   person sitting at the computer.
 - The marketing website, beyond it being a static page with no scripts.

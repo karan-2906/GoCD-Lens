@@ -48,7 +48,10 @@ cd site && python3 -m http.server 8000     # then open http://127.0.0.1:8000
 
 ## Before the first real deploy — change the domain
 
-The canonical URL is written into 13 places, all currently `https://go-cd-lens.vercel.app`. If you
+The canonical URL is written into 18 places across 9 files, all currently
+`https://gocd-lens.vercel.app`. The host also appears outside `site/` -- in `README.md`,
+`SECURITY.md` and `docs/PUBLISHING.md` -- so a rename that only sweeps `site/` leaves the
+repository pointing at a host that redirects. If you
 move to a different domain, change every one or search engines will index a host that does not
 exist:
 
@@ -62,7 +65,7 @@ exist:
 
 ```sh
 # after picking a domain
-grep -rl 'go-cd-lens.vercel.app' site/ | xargs sed -i '' 's|go-cd-lens.vercel.app|your-domain.com|g'
+grep -rl 'gocd-lens.vercel.app' --exclude-dir=.git . | xargs sed -i '' 's|gocd-lens.vercel.app|your-domain.com|g'
 ```
 
 ## After the first deploy, check these
