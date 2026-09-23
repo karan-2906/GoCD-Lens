@@ -8,7 +8,7 @@
  */
 
 import { el, icon, highlighted } from '../common/ui.js';
-import { pipelineStatus } from '../lib/status.js';
+import { pipelineStatus, runScheduledAt } from '../lib/status.js';
 import {
   state,
   navigate,
@@ -179,7 +179,7 @@ function card({ pipeline, hits, viaGroup }) {
       viaGroup && el('span', { class: 'via-group' }, icon('folder', { size: 11 }), viaGroup),
       run?.label && el('span', { class: 'truncate mono', text: run.label, title: run.label }),
       el('span', { class: 'spacer' }),
-      relativeTime(lastScheduled(run)),
+      relativeTime(runScheduledAt(run)),
     ),
   );
 
@@ -221,18 +221,6 @@ function iconAction(name, title, onClick, active = false, activeClass = 'starred
     },
     icon(name),
   );
-}
-
-/**
- * The dashboard payload carries stage schedule times but not a run timestamp,
- * so the newest stage start is the closest thing to "when did this happen".
- */
-function lastScheduled(run) {
-  const stages = run?._embedded?.stages || [];
-  const times = stages.map((s) => s.scheduled_at || s.scheduled_date).filter(Boolean);
-  if (times.length === 0) return 0;
-  const parsed = times.map((t) => (typeof t === 'number' ? t : Date.parse(t))).filter(Boolean);
-  return parsed.length ? Math.max(...parsed) : 0;
 }
 
 /**

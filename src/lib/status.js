@@ -131,6 +131,36 @@ export function jobStatus(job) {
 
 // --------------------------------------------------------------------- time
 
+/**
+ * When a run happened, as the dashboard payload tells it.
+ *
+ * A run instance carries its own schedule time, and it is the same moment the
+ * history endpoint calls `scheduled_date` -- so reading it is what stops a card
+ * and the pipeline page disagreeing about one run.
+ *
+ * Without it, the *first* stage is the fallback, because a stage starts with
+ * the run it belongs to. The newest stage start is a different question: re-run
+ * one stage and that becomes "just now" while the run it belongs to is a week
+ * old, which is exactly how a card came to read "just now" beside a page
+ * reading "8d ago".
+ */
+export function runScheduledAt(run) {
+  const own = epochOf(run?.scheduled_at ?? run?.scheduled_date);
+  if (own) return own;
+
+  const stages = run?._embedded?.stages || run?.stages || [];
+  const times = stages.map((stage) => epochOf(stage?.scheduled_at ?? stage?.scheduled_date)).filter(Boolean);
+  return times.length ? Math.min(...times) : 0;
+}
+
+/** The dashboard sends an ISO string where the history endpoint sends millis. */
+function epochOf(value) {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  if (typeof value !== 'string' || !value) return 0;
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
 export function timeAgo(epochMillis, now = Date.now()) {
   if (!epochMillis) return '';
   const seconds = Math.max(0, Math.round((now - epochMillis) / 1000));

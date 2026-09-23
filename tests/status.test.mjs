@@ -23,6 +23,7 @@ import {
   flattenArtifacts,
   parseLogLine,
   timeAgo,
+  runScheduledAt,
   duration,
 } from '../src/lib/status.js';
 
@@ -408,6 +409,58 @@ test('relative times read the way a person would say them', () => {
   assert.equal(timeAgo(now - 2 * 86_400_000, now), '2d ago');
   assert.equal(timeAgo(0, now), '', 'a missing timestamp shows nothing rather than 1970');
   assert.equal(timeAgo(now + 60_000, now), 'just now', 'clock skew must not read as negative');
+});
+
+/**
+ * The card and the pipeline page must answer "when did this run" with the same
+ * moment. They read different endpoints, so this is the seam where they agreed
+ * to disagree: a card said "just now" over a run the page dated eight days ago.
+ */
+test('a card reads the run its own schedule time, not its stages', () => {
+  const run = {
+    scheduled_at: '2026-09-15T13:10:00.000Z',
+    _embedded: {
+      stages: [
+        { name: 'build', scheduled_at: '2026-09-15T13:10:00.000Z' },
+        // Re-run this morning. It is the newest thing here and the most
+        // misleading: the run it belongs to is still eight days old.
+        { name: 'test', scheduled_at: '2026-09-23T09:00:00.000Z' },
+      ],
+    },
+  };
+  assert.equal(runScheduledAt(run), Date.parse('2026-09-15T13:10:00.000Z'));
+});
+
+test('without a run timestamp, the first stage stands in -- never the last', () => {
+  const run = {
+    _embedded: {
+      stages: [
+        { name: 'build', scheduled_at: '2026-09-15T13:10:00.000Z' },
+        { name: 'test', scheduled_at: '2026-09-23T09:00:00.000Z' },
+      ],
+    },
+  };
+  assert.equal(
+    runScheduledAt(run),
+    Date.parse('2026-09-15T13:10:00.000Z'),
+    'a stage re-run must not drag the run forward to "just now"',
+  );
+});
+
+test('a run timestamp is read whether it arrives as millis or as a string', () => {
+  // The dashboard sends ISO strings; the history endpoint sends epoch millis.
+  const millis = Date.parse('2026-09-15T13:10:00.000Z');
+  assert.equal(runScheduledAt({ scheduled_date: millis }), millis);
+  assert.equal(runScheduledAt({ scheduled_at: '2026-09-15T13:10:00.000Z' }), millis);
+  assert.equal(runScheduledAt({ stages: [{ scheduled_date: millis }] }), millis, 'history shape too');
+});
+
+test('a run with no usable timestamp shows nothing rather than 1970', () => {
+  assert.equal(runScheduledAt(null), 0);
+  assert.equal(runScheduledAt({}), 0);
+  assert.equal(runScheduledAt({ scheduled_at: 'not a date' }), 0);
+  assert.equal(runScheduledAt({ _embedded: { stages: [{ name: 'build' }] } }), 0);
+  assert.equal(timeAgo(runScheduledAt({})), '');
 });
 
 test('durations are written in the largest useful unit', () => {
