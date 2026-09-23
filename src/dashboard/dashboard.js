@@ -174,7 +174,10 @@ function wireChrome() {
   search.addEventListener('input', () => {
     state.search = search.value;
     if (state.route.kind !== 'list') resetToList();
-    render();
+    // The clear button belongs to the box, not to the list, so it keeps up with
+    // the typing rather than with the paint.
+    $('#search-clear').hidden = !state.search;
+    paintSearchSoon();
   });
 
   // Enter opens the best match, so finding a pipeline is a few letters and Enter.
@@ -184,6 +187,9 @@ function wireChrome() {
     if (!best) return;
     event.preventDefault();
     search.blur();
+    // Enter reads `state.search`, which is already current, so it does not wait
+    // for the pending paint -- and navigating repaints anyway.
+    cancelSearchPaint();
     navigate({ kind: 'pipeline', name: best.pipeline.name });
   });
 
@@ -270,8 +276,40 @@ function wireChrome() {
   });
 }
 
+/**
+ * Typing must not wait for the list to be painted.
+ *
+ * A search reaches into folded groups -- `isGroupCollapsed` returns false while
+ * one is typed, or a match inside a shut group would look like no match at all.
+ * On a large instance that means one keystroke expands every group it matches
+ * and builds every card in them, synchronously, before the browser gets to
+ * repaint. Matching three thousand pipelines costs about a millisecond; drawing
+ * them costs seconds, and fuzzy matching is generous enough that even three
+ * letters still matches nearly everything. So the letters queue behind the
+ * paint and arrive together, and the box looks frozen and then fills itself.
+ *
+ * The state moves on the keystroke; only the painting is coalesced.
+ */
+const SEARCH_PAINT_MS = 140;
+let searchPaint = null;
+
+function paintSearchSoon() {
+  clearTimeout(searchPaint);
+  searchPaint = setTimeout(() => {
+    searchPaint = null;
+    render();
+  }, SEARCH_PAINT_MS);
+}
+
+/** For the paths that repaint right now, so a queued one cannot land after. */
+function cancelSearchPaint() {
+  clearTimeout(searchPaint);
+  searchPaint = null;
+}
+
 function clearSearch({ focus = true } = {}) {
   state.search = '';
+  cancelSearchPaint();
   render();
   if (focus) $('#search').focus();
 }
