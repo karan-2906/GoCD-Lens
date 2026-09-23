@@ -82,9 +82,11 @@ and returns every pipeline on the instance — visible only as a fat payload, be
 enforcement still shows the right list.
 
 **`allowEmpty=true`** goes alongside `viewName`, so a view matching nothing means
-nothing rather than falling back to the unfiltered dashboard.
-⚠️ **Spelling unconfirmed** — camelCase was chosen to match `viewName`, but it was
-reported as `allow_empty`. Check DevTools against a live server and correct it.
+nothing rather than falling back to the unfiltered dashboard. **Confirmed
+camelCase** in `DashboardControllerV4` (`request.queryParams("allowEmpty")`) --
+it reads it only when the `ALLOW_EMPTY_PIPELINE_GROUPS_DASHBOARD` feature toggle
+is on, so a server with the toggle off ignores it and the local enforcement in
+`applyView()` is what keeps an empty view empty.
 
 **A stage's status is not in one field.** `/api/dashboard` sets `status`;
 `/api/pipelines/:name/history` may set `result` instead; a stage mid-flight can
@@ -117,8 +119,20 @@ that is `Building`/`Scheduled`, which `rollup` catches first.
 between two polls; comparing statuses alone sees no change and says nothing.
 
 **Mutations need `X-GoCD-Confirm: true`.** Accept versions: dashboard `v4`,
-pipelines `v1`, stages `v3`. `/files/...` is a plain file server — no
-`vnd.go.cd` Accept header.
+pipelines `v1`. `/files/...` is a plain file server — no `vnd.go.cd` Accept
+header.
+
+**The stage routes are split across two controllers, and "stages v3" is wrong.**
+`StageInstanceControllerV3` serves `cancel`, `run-failed-jobs`,
+`run-selected-jobs` and the stage instance `GET` -- all **v3**, all carrying the
+stage counter. `StageOperationsControllerV2` serves **run**, and it is **v2 with
+no stage counter in the path**: re-running a stage creates the next attempt, so
+there is no attempt to address. Treating `run` like the other three sends it to
+`/:pipeline/:counter/:stage/:stageCounter/run` at v3, which is a 404 on the path
+and a 406 on the version. That shipped: *Re-run* was broken while *Re-run
+selected (n)* worked, because they are different endpoints. Read the version off
+GoCD's own module names -- `api/api-stage-operations-v2`,
+`api/api-stage-instance-v3` -- rather than assuming a resource has one.
 
 **GoCD's views can break while its pipelines are fine.** Observed in production:
 `?viewName=...` started failing and took the web UI down with it, while a plain
@@ -363,6 +377,5 @@ is a personal profile and the history should read as one author's.
   The *rendering* is no longer unseen: `tools/make-screenshots.mjs` serves the
   real pages against fixture replies and photographs them in headless Chrome, so
   layout and theming can be looked at. Use it before guessing at a visual bug.
-- `allowEmpty` spelling (above).
 - The OS-settings deep links were removed deliberately: Chrome cannot open
   System Settings, and a button that might do nothing is worse than none.

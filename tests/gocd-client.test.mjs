@@ -112,7 +112,14 @@ before(async () => {
       });
     }
 
-    if (req.method === 'POST' && /^\/go\/api\/stages\/web-app\/42\/build\/1\/(cancel|run|run-failed-jobs)$/.test(path)) {
+    // Attempt-scoped verbs: these carry the stage counter, and are v3.
+    if (req.method === 'POST' && /^\/go\/api\/stages\/web-app\/42\/build\/1\/(cancel|run-failed-jobs)$/.test(path)) {
+      return json(res, 202, { message: 'accepted' });
+    }
+
+    // Running the stage is a different controller: no stage counter, and v2.
+    // Kept separate so the old shape 404s here exactly as GoCD would.
+    if (req.method === 'POST' && path === '/go/api/stages/web-app/42/build/run') {
       return json(res, 202, { message: 'accepted' });
     }
 
@@ -281,8 +288,10 @@ test('mutating calls carry X-GoCD-Confirm and the right API version', async () =
   await client.cancelStage('web-app', 42, 'build', '1');
   assert.ok(lastRequest('/go/api/stages/web-app/42/build/1/cancel'));
 
-  await client.rerunStage('web-app', 42, 'build', '1');
-  assert.ok(lastRequest('/go/api/stages/web-app/42/build/1/run'));
+  await client.rerunStage('web-app', 42, 'build');
+  const run = lastRequest('/go/api/stages/web-app/42/build/run');
+  assert.ok(run, 'running a stage addresses the stage, not one of its attempts');
+  assert.equal(run.headers.accept, 'application/vnd.go.cd.v2+json', 'this one is v2, not v3');
 });
 
 test('triggering with variables sends them and asks for fresh materials', async () => {
@@ -497,13 +506,23 @@ test('re-running selected jobs names them, so eleven passing jobs are left alone
   assert.deepEqual(JSON.parse(request.body), { jobs: ['zod', 'canvas'] });
 });
 
-test('the three re-run shapes stay distinct endpoints', async () => {
+test('the three re-run shapes stay distinct endpoints, and two of them are v3', async () => {
   seen = [];
   const client = tokenClient();
-  await client.rerunStage('web-app', 42, 'build', '1');
+  await client.rerunStage('web-app', 42, 'build');
   await client.rerunFailedJobs('web-app', 42, 'build', '1');
   await client.rerunSelectedJobs('web-app', 42, 'build', '1', ['zod']);
 
-  const paths = seen.filter((r) => r.method === 'POST').map((r) => r.url.split('/').pop());
-  assert.deepEqual(paths, ['run', 'run-failed-jobs', 'run-selected-jobs']);
+  const posts = seen.filter((r) => r.method === 'POST');
+  assert.deepEqual(
+    posts.map((r) => r.url.split('/').pop()),
+    ['run', 'run-failed-jobs', 'run-selected-jobs'],
+  );
+  // GoCD splits these across two controllers, so one Accept version is wrong
+  // for the other -- see rerunStage.
+  assert.deepEqual(posts.map((r) => r.headers.accept), [
+    'application/vnd.go.cd.v2+json',
+    'application/vnd.go.cd.v3+json',
+    'application/vnd.go.cd.v3+json',
+  ]);
 });

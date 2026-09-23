@@ -348,8 +348,25 @@ export class GoCdClient {
     await this.#stageVerb(pipeline, counter, stage, stageCounter, 'run-failed-jobs');
   }
 
-  async rerunStage(pipeline, counter, stage, stageCounter) {
-    await this.#stageVerb(pipeline, counter, stage, stageCounter, 'run');
+  /**
+   * Run a whole stage again.
+   *
+   * The odd one out, and deliberately not `#stageVerb`. GoCD serves this from
+   * StageOperationsControllerV2 -- **v2, and no stage counter in the path** --
+   * while cancel, run-failed-jobs and run-selected-jobs come from
+   * StageInstanceControllerV3. That is consistent once you see it: re-running a
+   * stage *creates* the next attempt, so there is no attempt to address, while
+   * the other three act on one that exists.
+   *
+   * Sending this the v3 shape is a 404 on the path and a 406 on the version,
+   * which is how "Re-run" could fail while "Re-run selected (n)" worked --
+   * different endpoint, different controller.
+   */
+  async rerunStage(pipeline, counter, stage) {
+    const path =
+      `/api/stages/${encodeSegment(pipeline)}/${encodeURIComponent(counter)}` +
+      `/${encodeSegment(stage)}/run`;
+    await this.#mutate(path, { version: 2 });
   }
 
   /**
@@ -363,6 +380,7 @@ export class GoCdClient {
     await this.#mutate(path, { version: 3, body: JSON.stringify({ jobs }) });
   }
 
+  /** Verbs that act on one existing attempt, and so carry its counter. */
   #stageVerb(pipeline, counter, stage, stageCounter, verb) {
     const path =
       `/api/stages/${encodeSegment(pipeline)}/${encodeURIComponent(counter)}` +

@@ -1024,7 +1024,7 @@ const handlers = {
     const api = await client();
     if (jobs?.length) await api.rerunSelectedJobs(pipeline, counter, stage, stageCounter, jobs);
     else if (failedOnly) await api.rerunFailedJobs(pipeline, counter, stage, stageCounter);
-    else await api.rerunStage(pipeline, counter, stage, stageCounter);
+    else await api.rerunStage(pipeline, counter, stage);
     return { ok: true };
   },
 
