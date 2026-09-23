@@ -23,7 +23,7 @@ instead — that goes to a private inbox.
 
 **For a feature**, say what you were trying to do, not just what to build. Several things in this
 project were deliberately removed once; [`CLAUDE.md`](CLAUDE.md) has a table of them and why. If
-your idea is on that list, the *why* is the part worth arguing with.
+your idea is on that list, the _why_ is the part worth arguing with.
 
 ---
 
@@ -43,7 +43,7 @@ after editing.
 Then:
 
 1. **Branch off `master`.** `fix/badge-counts-twice`, `feat/filter-by-agent` — anything readable.
-2. **Make the change, and keep it to one thing.** A PR that fixes a bug *and* renames things is two
+2. **Make the change, and keep it to one thing.** A PR that fixes a bug _and_ renames things is two
    reviews wearing one hat.
 3. **`npm test` must pass.** The pre-commit hook runs it for you and refuses the commit otherwise.
    CI runs the same suite on the PR.
@@ -63,12 +63,12 @@ These are enforced by [`tests/package-integrity.test.mjs`](tests/package-integri
 reads the actual files. They are not style preferences — each one is a promise made to users on the
 store listing and the website.
 
-| Rule | Why |
-|---|---|
-| **`chrome.storage.local` only** | `storage.sync` uploads to the user's Google account and copies to every machine they own. The extension promises it never does that. |
-| **No `innerHTML`, no `eval`, no `new Function`** | Build logs and commit messages are the least trustworthy data in the product. `el()` in `common/ui.js` is the only way data reaches the screen, and it assigns with `textContent`. |
-| **`host_permissions` stays empty** | A fresh install must be able to reach nothing. Access is requested one origin at a time, at Connect. |
-| **No content scripts, no remote assets, no analytics** | The user's GoCD server is the only host contacted. This is unconditional, and it is why the extension can be trusted with a credential. |
+| Rule                                                   | Why                                                                                                                                                                                |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`chrome.storage.local` only**                        | `storage.sync` uploads to the user's Google account and copies to every machine they own. The extension promises it never does that.                                               |
+| **No `innerHTML`, no `eval`, no `new Function`**       | Build logs and commit messages are the least trustworthy data in the product. `el()` in `common/ui.js` is the only way data reaches the screen, and it assigns with `textContent`. |
+| **`host_permissions` stays empty**                     | A fresh install must be able to reach nothing. Access is requested one origin at a time, at Connect.                                                                               |
+| **No content scripts, no remote assets, no analytics** | The user's GoCD server is the only host contacted. This is unconditional, and it is why the extension can be trusted with a credential.                                            |
 
 One more that no test can catch: **pages never call GoCD**. They post a message to the service
 worker, which owns the credential and makes the request. A bug in a rendering path therefore cannot

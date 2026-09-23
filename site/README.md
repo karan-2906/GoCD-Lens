@@ -52,13 +52,13 @@ The canonical URL is written into 13 places, all currently `https://go-cd-lens.v
 move to a different domain, change every one or search engines will index a host that does not
 exist:
 
-| File | Occurrences |
-|---|---|
-| `index.html` | 5 — `canonical`, `og:url`, `og:image`, `twitter:image`, and `url` in the JSON-LD |
-| `privacy.html` | 4 — `canonical`, `og:url`, `og:image`, `twitter:image` |
-| `robots.txt` | 1 — the `Sitemap:` line |
-| `sitemap.xml` | 2 — one per URL |
-| `llms.txt` | 1 — the privacy policy link |
+| File           | Occurrences                                                                      |
+| -------------- | -------------------------------------------------------------------------------- |
+| `index.html`   | 5 — `canonical`, `og:url`, `og:image`, `twitter:image`, and `url` in the JSON-LD |
+| `privacy.html` | 4 — `canonical`, `og:url`, `og:image`, `twitter:image`                           |
+| `robots.txt`   | 1 — the `Sitemap:` line                                                          |
+| `sitemap.xml`  | 2 — one per URL                                                                  |
+| `llms.txt`     | 1 — the privacy policy link                                                      |
 
 ```sh
 # after picking a domain

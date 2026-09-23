@@ -22,8 +22,12 @@
 
   --radius: 12px;
   --radius-lg: 18px;
-  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  --font:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+  --mono:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono",
+    monospace;
 
   --gutter: 24px;
   --max: 1120px;
@@ -484,7 +488,7 @@ h3 {
 }
 
 .checks li::before {
-  content: '';
+  content: "";
   position: absolute;
   left: 22px;
   top: 25px;
@@ -525,7 +529,7 @@ summary::-webkit-details-marker {
 }
 
 summary::after {
-  content: '+';
+  content: "+";
   position: absolute;
   right: 6px;
   top: 50%;
@@ -536,7 +540,7 @@ summary::after {
 }
 
 details[open] summary::after {
-  content: '−';
+  content: "−";
 }
 
 details p {

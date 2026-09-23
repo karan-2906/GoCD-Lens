@@ -14,7 +14,7 @@ one for the mobile app. Each line is called a **pipeline**. A pipeline has **sta
 in order (build it → test it → ship it), and each stage has **jobs**, which are the individual
 workers doing the actual tasks. A stage can have a dozen jobs running side by side.
 
-Your job, as someone who works there, is to know: *is my thing working, or did it break?*
+Your job, as someone who works there, is to know: _is my thing working, or did it break?_
 
 The factory has two ways to tell you.
 
@@ -37,7 +37,7 @@ keeps working — because it was never using the board in the first place.
 
 ## 2. What a browser extension actually is
 
-An extension is a small program that lives *inside* your browser. It is not a website you visit
+An extension is a small program that lives _inside_ your browser. It is not a website you visit
 and not an app you install on your computer. It rides along inside Chrome (or Edge, or Brave).
 
 GoCD Lens shows up in three places:
@@ -67,7 +67,7 @@ proves to the factory that you are allowed to ask. It is kept in that room and n
 
 Three rooms draw things on screen: the full dashboard, the little popup panel, and the settings
 page. **None of them has a telephone.** When the dashboard wants to know something, it slides a
-note under the door to the back office: *"what's happening with the pipelines?"* The employee makes
+note under the door to the back office: _"what's happening with the pipelines?"_ The employee makes
 the call and slides back a note with the answer — just the answer, never the password.
 
 This sounds like extra work. It is deliberate, and section 8 explains why.
@@ -102,7 +102,7 @@ address you'd normally open in a tab.
 
 **You press Connect, and two things happen.**
 
-First, the browser asks your permission out loud: *"allow GoCD Lens to access gocd.mycompany.com?"*
+First, the browser asks your permission out loud: _"allow GoCD Lens to access gocd.mycompany.com?"_
 Until you say yes, **the extension cannot reach any website at all** — not your factory, not
 anything. It ships knowing nothing and permitted nothing. You grant it one address, and only that
 one.
@@ -121,16 +121,16 @@ A big company might have thousands of pipelines. The naive approach — ask abou
 time — would mean thousands of phone calls every few seconds. That would flatten the factory's
 switchboard. Your monitoring tool would become the outage.
 
-So the employee asks **one question** that covers everything: *"give me the state of every pipeline
-I can see."* One call, one answer, however many pipelines there are.
+So the employee asks **one question** that covers everything: _"give me the state of every pipeline
+I can see."_ One call, one answer, however many pipelines there are.
 
 ### The "anything new?" trick
 
 Asking every ten seconds still sounds wasteful, so there's a shortcut.
 
 When the factory answers, it attaches a little slip with a code on it — think of it as a version
-stamp. Next time, the employee sends that stamp along with the question: *"I've got version 47 —
-anything changed?"* If nothing has, the factory replies **"nope"** and nothing else. That reply is
+stamp. Next time, the employee sends that stamp along with the question: _"I've got version 47 —
+anything changed?"_ If nothing has, the factory replies **"nope"** and nothing else. That reply is
 almost empty. It costs the factory nearly nothing to send and nearly nothing to receive.
 
 Only when something has genuinely changed does the full answer come back.
@@ -159,7 +159,7 @@ make the page flicker for no reason.
 
 Each pipeline is a card. Along the bottom of the card is a **strip of coloured segments — one per
 stage, in order.** Green, green, red means: it built fine, it tested fine, and it died while
-shipping. You learn *where* it broke without clicking anything.
+shipping. You learn _where_ it broke without clicking anything.
 
 ### Searching by initials
 
@@ -170,7 +170,7 @@ difference between finding something in a second and scrolling through a list of
 ### A star and a bell, which are different things
 
 - A **star** pins a pipeline to the top of every list. It's for things you look at often.
-- A **bell** means *interrupt me*. You get told when it starts and when it finishes.
+- A **bell** means _interrupt me_. You get told when it starts and when it finishes.
 
 They're separate on purpose. Wanting something close to hand and wanting to be interrupted by it
 are two different wishes, and mixing them means you either lose things you care about or get
@@ -193,13 +193,13 @@ So each job has a **tick box**, with the failed ones already ticked. You adjust 
 the button, and only those jobs run again. Re-running all twelve to retry one would tie up twelve
 machines for nothing.
 
-If you tick *everything*, that's just "run the whole stage again", and it's sent as exactly that.
+If you tick _everything_, that's just "run the whole stage again", and it's sent as exactly that.
 
 ### Reading the logs as they happen
 
 When a job runs, it produces a long stream of text — the **log**. Open it and you see it fill in
-live. Rather than re-downloading the whole thing every few seconds, the extension says *"I've read
-up to line 4,000, what's after that?"* and receives only the new lines.
+live. Rather than re-downloading the whole thing every few seconds, the extension says _"I've read
+up to line 4,000, what's after that?"_ and receives only the new lines.
 
 Errors are tinted red, warnings amber, so the thing that went wrong stands out in a wall of text.
 
@@ -227,7 +227,7 @@ That is the exact situation this whole extension exists for.
 This is the part worth understanding even if you skip everything else.
 
 **Only one room has a telephone.** Because the display rooms cannot make calls, a bug in the drawing
-code *cannot* leak your password. It never had it. This isn't a promise to be careful; it's an
+code _cannot_ leak your password. It never had it. This isn't a promise to be careful; it's an
 arrangement where the mistake isn't possible.
 
 **It can't read the pages you browse.** Many extensions insert themselves into every website you
@@ -245,7 +245,7 @@ actual files and fails if anyone ever changes that, which blocks the change from
 
 **Text from the factory is never treated as instructions.** Build logs and commit messages are
 written by other people and machines. If such text were dropped carelessly onto a page, it could
-smuggle in commands that the browser then obeys. So every piece of text arrives as *text only* —
+smuggle in commands that the browser then obeys. So every piece of text arrives as _text only_ —
 labelled as something to display, never as something to run.
 
 **No outside code, no tracking.** Every picture, sound, and line of code is inside the extension
@@ -265,20 +265,20 @@ This is exactly why "use my existing login" is the default: it stores nothing at
 
 ## 9. A small glossary
 
-| Word | What it means here |
-|---|---|
-| **GoCD** | The factory — the system that builds and ships your company's software |
-| **Pipeline** | One assembly line, e.g. "build the website" |
-| **Stage** | One step of a pipeline, in order: build → test → ship |
-| **Job** | One worker inside a stage; a stage can run many at once |
-| **API** | The information desk — a plain service that answers questions reliably |
-| **Extension** | A small program living inside your browser |
-| **Service worker** | The back office; the only part allowed to make phone calls |
-| **Badge** | The little number on the toolbar icon |
-| **Polling** | Asking again every so often, because the factory never rings you |
-| **Cache** | The copy of the last answer, kept so the screen works offline |
-| **Token** | A visitor badge — proves who you are, and can be cancelled on its own |
-| **VPN** | A private tunnel you connect through to reach internal company systems |
+| Word               | What it means here                                                     |
+| ------------------ | ---------------------------------------------------------------------- |
+| **GoCD**           | The factory — the system that builds and ships your company's software |
+| **Pipeline**       | One assembly line, e.g. "build the website"                            |
+| **Stage**          | One step of a pipeline, in order: build → test → ship                  |
+| **Job**            | One worker inside a stage; a stage can run many at once                |
+| **API**            | The information desk — a plain service that answers questions reliably |
+| **Extension**      | A small program living inside your browser                             |
+| **Service worker** | The back office; the only part allowed to make phone calls             |
+| **Badge**          | The little number on the toolbar icon                                  |
+| **Polling**        | Asking again every so often, because the factory never rings you       |
+| **Cache**          | The copy of the last answer, kept so the screen works offline          |
+| **Token**          | A visitor badge — proves who you are, and can be cancelled on its own  |
+| **VPN**            | A private tunnel you connect through to reach internal company systems |
 
 ---
 

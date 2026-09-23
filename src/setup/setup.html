@@ -16,15 +16,21 @@
             <p class="muted">Your pipelines, straight from the API.</p>
           </div>
         </div>
-        <a class="btn btn-ghost" id="open-dashboard" href="../dashboard/dashboard.html">Open dashboard</a>
+        <a
+          class="btn btn-ghost"
+          id="open-dashboard"
+          href="../dashboard/dashboard.html"
+          >Open dashboard</a
+        >
       </header>
 
       <section class="card" id="welcome" hidden>
         <h2>Welcome</h2>
         <p class="muted">
-          GoCD Lens reads your pipelines from the GoCD REST API and draws its own dashboard, so it
-          keeps working when the GoCD web UI is restarting, half-loaded, or has decided your
-          pipelines do not exist. Connect a server below and you are done.
+          GoCD Lens reads your pipelines from the GoCD REST API and draws its
+          own dashboard, so it keeps working when the GoCD web UI is restarting,
+          half-loaded, or has decided your pipelines do not exist. Connect a
+          server below and you are done.
         </p>
       </section>
 
@@ -41,8 +47,8 @@
             spellcheck="false"
           />
           <p class="hint">
-            The address you normally open GoCD at, including the path it lives under - usually
-            ending in <code>/go</code>.
+            The address you normally open GoCD at, including the path it lives
+            under - usually ending in <code>/go</code>.
           </p>
         </div>
 
@@ -52,12 +58,22 @@
           <legend>How should it sign in?</legend>
 
           <label class="auth-option" for="auth-session">
-            <input type="radio" name="auth" id="auth-session" value="session" checked />
+            <input
+              type="radio"
+              name="auth"
+              id="auth-session"
+              value="session"
+              checked
+            />
             <span class="auth-body">
-              <span class="auth-title">Use my existing GoCD login <em class="tag tag-good">nothing stored</em></span>
+              <span class="auth-title"
+                >Use my existing GoCD login
+                <em class="tag tag-good">nothing stored</em></span
+              >
               <span class="hint">
-                Rides the session you already have in this browser. No password or token is saved
-                anywhere. Start here - if GoCD works in a tab, this works.
+                Rides the session you already have in this browser. No password
+                or token is saved anywhere. Start here - if GoCD works in a tab,
+                this works.
               </span>
             </span>
           </label>
@@ -67,11 +83,13 @@
             <span class="auth-body">
               <span class="auth-title">Personal access token</span>
               <span class="hint">
-                Survives session expiry and avoids GoCD's CSRF checks on actions like trigger and
-                pause. Create one under your GoCD profile &rarr; Personal Access Tokens. It is kept
-                on this machine, in storage no website and no other extension can read - but not
-                encrypted on disk, so anyone who can read this browser profile can read it. A token
-                can be revoked; prefer one over your password.
+                Survives session expiry and avoids GoCD's CSRF checks on actions
+                like trigger and pause. Create one under your GoCD profile
+                &rarr; Personal Access Tokens. It is kept on this machine, in
+                storage no website and no other extension can read - but not
+                encrypted on disk, so anyone who can read this browser profile
+                can read it. A token can be revoked; prefer one over your
+                password.
               </span>
             </span>
           </label>
@@ -81,9 +99,10 @@
             <span class="auth-body">
               <span class="auth-title">Username and password</span>
               <span class="hint">
-                For older servers that do not offer access tokens. Your password is kept the same
-                way a token is - on this machine, unencrypted on disk - and unlike a token it
-                cannot be revoked on its own. Use a token if your server supports one.
+                For older servers that do not offer access tokens. Your password
+                is kept the same way a token is - on this machine, unencrypted
+                on disk - and unlike a token it cannot be revoked on its own.
+                Use a token if your server supports one.
               </span>
             </span>
           </label>
@@ -92,8 +111,19 @@
         <div class="field" id="token-field" hidden>
           <label for="token">Access token</label>
           <div class="secret-row">
-            <input type="password" id="token" autocomplete="off" spellcheck="false" placeholder="Paste your GoCD token" />
-            <button type="button" class="icon-btn" id="toggle-token" title="Show or hide"></button>
+            <input
+              type="password"
+              id="token"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="Paste your GoCD token"
+            />
+            <button
+              type="button"
+              class="icon-btn"
+              id="toggle-token"
+              title="Show or hide"
+            ></button>
           </div>
           <p class="hint" id="token-hint"></p>
         </div>
@@ -101,7 +131,12 @@
         <div class="two-up" id="basic-fields" hidden>
           <div class="field">
             <label for="username">Username</label>
-            <input type="text" id="username" autocomplete="off" spellcheck="false" />
+            <input
+              type="text"
+              id="username"
+              autocomplete="off"
+              spellcheck="false"
+            />
           </div>
           <div class="field">
             <label for="password">Password</label>
@@ -112,7 +147,9 @@
         <div class="actions-row">
           <button class="btn btn-primary" id="save">Connect</button>
           <button class="btn" id="test">Test without saving</button>
-          <button class="btn btn-ghost" id="disconnect" hidden>Disconnect</button>
+          <button class="btn btn-ghost" id="disconnect" hidden>
+            Disconnect
+          </button>
         </div>
         <div id="connection-result"></div>
       </section>
@@ -123,9 +160,10 @@
           <button class="btn btn-sm" id="run-diagnostics">Run check</button>
         </div>
         <p class="muted small">
-          Checks the GoCD API directly to verify whether your pipelines are responding as expected.
-          If the GoCD UI isn't responding but the API is, your pipelines are still running normally.
-          Feel free to keep using GoCD Lens to monitor them.
+          Checks the GoCD API directly to verify whether your pipelines are
+          responding as expected. If the GoCD UI isn't responding but the API
+          is, your pipelines are still running normally. Feel free to keep using
+          GoCD Lens to monitor them.
         </p>
         <div id="diagnostics"></div>
       </section>
@@ -144,7 +182,8 @@
             <option value="0">Only when I click refresh</option>
           </select>
           <p class="hint">
-            How frequently the dashboard checks for updates while it is open and visible.
+            How frequently the dashboard checks for updates while it is open and
+            visible.
           </p>
         </div>
 
@@ -158,8 +197,9 @@
             <option value="0">Never - only while a tab is open</option>
           </select>
           <p class="hint">
-            How frequently to check for updates when the dashboard is not open. This keeps the
-            toolbar badge current; set it to Never and the badge only updates while a tab is open.
+            How frequently to check for updates when the dashboard is not open.
+            This keeps the toolbar badge current; set it to Never and the badge
+            only updates while a tab is open.
           </p>
         </div>
 
@@ -171,8 +211,9 @@
             <option value="view">Whichever view is open</option>
           </select>
           <p class="hint">
-            Choose which pipelines are included in the toolbar badge count. Blue shows the number of
-            running pipelines. If none are running, red shows the number of failed pipelines.
+            Choose which pipelines are included in the toolbar badge count. Blue
+            shows the number of running pipelines. If none are running, red
+            shows the number of failed pipelines.
           </p>
         </div>
 
@@ -189,7 +230,8 @@
           <span>
             Desktop notifications
             <span class="hint">
-              Get notified about pipelines you're watching when a run starts, passes, or fails.
+              Get notified about pipelines you're watching when a run starts,
+              passes, or fails.
             </span>
           </span>
         </label>
@@ -201,8 +243,11 @@
           <span>
             Notify me even when no dashboard tab is open
             <span class="hint">
-              Allow those background checks to notify you. Checks run periodically as mentioned in
-              <button type="button" class="link-btn" id="goto-background">background check</button>.
+              Allow those background checks to notify you. Checks run
+              periodically as mentioned in
+              <button type="button" class="link-btn" id="goto-background">
+                background check</button
+              >.
             </span>
           </span>
         </label>
@@ -212,16 +257,23 @@
           <span>
             Play a short chime
             <span class="hint">
-              Play a short sound along with desktop notifications when an alert is triggered.
+              Play a short sound along with desktop notifications when an alert
+              is triggered.
             </span>
           </span>
         </label>
 
         <div class="chime-row check-aside" id="sound-table" hidden>
           <span class="chime-label">Hear a sample when a pipeline:</span>
-          <button class="btn btn-sm" id="preview-start" type="button">starts</button>
-          <button class="btn btn-sm" id="preview-success" type="button">passes</button>
-          <button class="btn btn-sm" id="preview-failure" type="button">fails</button>
+          <button class="btn btn-sm" id="preview-start" type="button">
+            starts
+          </button>
+          <button class="btn btn-sm" id="preview-success" type="button">
+            passes
+          </button>
+          <button class="btn btn-sm" id="preview-failure" type="button">
+            fails
+          </button>
         </div>
 
         <label class="check" for="notify-starred">
@@ -229,8 +281,8 @@
           <span>
             Also notify for starred pipelines
             <span class="hint">
-              Receive notifications for starred pipelines when their status changes from passing
-              to failing or from failing back to passing.
+              Receive notifications for starred pipelines when their status
+              changes from passing to failing or from failing back to passing.
             </span>
           </span>
         </label>
@@ -266,8 +318,8 @@
       </section>
 
       <footer class="page-foot muted small">
-        GoCD Lens keeps your data local and only communicates with the GoCD servers you configure.
-        No analytics. No telemetry. No remote code.
+        GoCD Lens keeps your data local and only communicates with the GoCD
+        servers you configure. No analytics. No telemetry. No remote code.
       </footer>
     </main>
 

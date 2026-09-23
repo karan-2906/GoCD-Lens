@@ -115,7 +115,7 @@ nothing known about any stage is `Unknown`. There is deliberately no third
 "in progress but not building" status; a genuinely mid-flight run has a stage
 that is `Building`/`Scheduled`, which `rollup` catches first.
 
-**Remember run counters, not just statuses.** A pipeline can start *and* finish
+**Remember run counters, not just statuses.** A pipeline can start _and_ finish
 between two polls; comparing statuses alone sees no change and says nothing.
 
 **Mutations need `X-GoCD-Confirm: true`.** Accept versions: dashboard `v4`,
@@ -129,8 +129,8 @@ stage counter. `StageOperationsControllerV2` serves **run**, and it is **v2 with
 no stage counter in the path**: re-running a stage creates the next attempt, so
 there is no attempt to address. Treating `run` like the other three sends it to
 `/:pipeline/:counter/:stage/:stageCounter/run` at v3, which is a 404 on the path
-and a 406 on the version. That shipped: *Re-run* was broken while *Re-run
-selected (n)* worked, because they are different endpoints. Read the version off
+and a 406 on the version. That shipped: _Re-run_ was broken while _Re-run
+selected (n)_ worked, because they are different endpoints. Read the version off
 GoCD's own module names -- `api/api-stage-operations-v2`,
 `api/api-stage-instance-v3` -- rather than assuming a resource has one.
 
@@ -138,7 +138,7 @@ GoCD's own module names -- `api/api-stage-operations-v2`,
 `?viewName=...` started failing and took the web UI down with it, while a plain
 `/api/dashboard` answered perfectly. `retryUnfiltered()` handles this — it
 re-asks without the filter and enforces the view from the cached definition.
-Only when we hold that definition (else the payload is wrong *and* huge), and
+Only when we hold that definition (else the payload is wrong _and_ huge), and
 never on network/auth errors.
 
 **No push channel of any kind.** Everything is polling. Console logs are a file
@@ -170,13 +170,13 @@ you to ignore it. Source is user-chosen (`view` / `watched` / `starred`) — an
 earlier `auto` mode that silently changed meaning when you starred something was
 removed for being invisible.
 
-**Two controls, each meaning what it says.** *Check in the background every*
-decides whether we check at all (which keeps the badge current). *Notify me even
-when no dashboard tab is open* decides whether those checks may interrupt you.
+**Two controls, each meaning what it says.** _Check in the background every_
+decides whether we check at all (which keeps the badge current). _Notify me even
+when no dashboard tab is open_ decides whether those checks may interrupt you.
 Gating the alarm on the notify tick meant the interval dropdown did nothing and
 the badge froze.
 
-**Quiet defaults.** Background checking ships as *Never*; open-tab refresh is
+**Quiet defaults.** Background checking ships as _Never_; open-tab refresh is
 10s. Unattended traffic deserves an explicit yes.
 
 **Views are enforced locally as well as server-side.** `viewName` is a request,
@@ -206,7 +206,7 @@ the popup and notifications deep-link straight into a pipeline before it runs.
 **The popup remembers what you typed, for five minutes.** It is a fresh
 document every time it opens, so a click anywhere else throws the search away
 -- a bad trade in a box whose whole job is finding one pipeline among thousands.
-It expires because the popup's first duty is *is anything red?*, and a filter
+It expires because the popup's first duty is _is anything red?_, and a filter
 left over from yesterday answers that about one pipeline while looking like it
 answered about all of them. Written on every keystroke rather than debounced,
 since the popup is torn down the instant it loses focus and a pending timer goes
@@ -220,7 +220,7 @@ checking off there may not be a next poll, and it widens again on its own when
 the search expires.
 
 **A restored search is re-asserted, not just displayed.** The TTL runs from the
-last *write*, and restoring the box was not a write -- so a search could expire
+last _write_, and restoring the box was not a write -- so a search could expire
 while you were looking at it, and the badge, which reads through the TTL, would
 widen to the whole view while the popup stayed narrowed. Badge 3 above a popup
 reading 1 running: same cache, same matcher, one of them handed an empty needle.
@@ -244,10 +244,10 @@ statuses) rather than the response, which carries durations that move on their
 own. A poll-driven reload is also silent: it must not drop a skeleton over a
 page you are reading.
 
-**Groups start collapsed**, and storage tracks which are *expanded* — so a new
+**Groups start collapsed**, and storage tracks which are _expanded_ — so a new
 group appearing on the server stays folded instead of unfolding into your list.
 
-**Three auth modes, session first.** *Use my existing GoCD login* rides the
+**Three auth modes, session first.** _Use my existing GoCD login_ rides the
 cookie already in the browser and stores **nothing**; token mode survives session
 expiry and sidesteps CSRF on mutations; basic auth is for old servers. Setup
 verifies the credential against the server **before** saving it.
@@ -255,7 +255,7 @@ verifies the credential against the server **before** saving it.
 **CORS is a non-issue because the worker makes every request.** Chrome exempts an
 extension's own contexts from CORS for hosts in its permissions, so GoCD needs no
 `Access-Control-Allow-Origin` and no `OPTIONS` preflight is sent — which is also
-why `X-GoCD-Confirm` never has to survive one. Content scripts *are* subject to
+why `X-GoCD-Confirm` never has to survive one. Content scripts _are_ subject to
 CORS; this extension has none.
 
 **Assets are generated, not shipped opaque.** `tools/make-icons.py` writes the
@@ -265,11 +265,11 @@ the ring. `tools/make-sounds.py` synthesises the three WAVs from arithmetic —
 shipping audio nobody can inspect is a poor trade in an extension asking to be
 trusted.
 
-**Scale defences.** The popup pages 16 at a time behind *Load more*; the log
+**Scale defences.** The popup pages 16 at a time behind _Load more_; the log
 viewer renders the last 6000 lines and offers a download for the rest. Rendering
 every card at once locks the tab, which is why groups start collapsed -- but an expanded
 group now paints in full: opening one is a deliberate ask for what is in it, and
-a 30-row cap with *Show all N* only put a second click in front of the answer.
+a 30-row cap with _Show all N_ only put a second click in front of the answer.
 The one path that can still ask for everything at once is a search broad enough
 to match most of the instance, since a search opens every group it matches.
 The sidebar has its own filter box for the same reason -- several hundred group
@@ -279,8 +279,8 @@ so a poll landing mid-type cannot take the caret with it.
 **Re-run picks jobs inline, not in a modal.** A stage of a dozen parallel e2e
 jobs is normal, and re-running all of them to retry one flaky job wastes agents.
 Each job row carries a checkbox before its terminal icon -- only where the stage
-can be re-run *and* has more than one job -- with failed jobs pre-ticked, because
-retrying what broke is the common case. The button reads *Re-run selected (n)*
+can be re-run _and_ has more than one job -- with failed jobs pre-ticked, because
+retrying what broke is the common case. The button reads _Re-run selected (n)_
 until the selection is empty or complete, both of which mean the whole stage and
 use `run` rather than `run-selected-jobs`. The checkbox sits outside the row's
 button: ticking a job must not open its log, and an `<input>` cannot live inside
@@ -302,19 +302,19 @@ pipeline on screen.
 
 Each of these existed and was removed for a reason:
 
-| Removed | Why |
-|---|---|
-| **Stale-deploy / GitHub check** | The only thing that ever contacted a third party. lazygocd *does* have it; dropping it makes "your GoCD server is the only host contacted" unconditional. |
-| **Run with variables** | Unused. The client still accepts `environmentVariables`; only the UI went. |
-| **Export settings** | Wrote a JSON with no way to import it back. |
-| **Sound volume slider** | The WAVs are synthesised quiet (~−13 dBFS) and the OS already has a volume control. |
-| **Failure-sound picker** | Five options collapsed to one fixed double beep. |
-| **Badge source `auto`** | Silently changed what it counted the moment you starred something. |
-| **`notifyScope` + `notifyOnRecovery`** | A scope dropdown and a direction tick collapsed into one *Also notify for starred pipelines*. "All pipelines" was unusable at 900 failures anyway. |
-| **OS notification-settings buttons** | Chrome cannot open System Settings; the URL schemes may be refused silently. The click-path is printed as text instead. |
+| Removed                                         | Why                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Stale-deploy / GitHub check**                 | The only thing that ever contacted a third party. lazygocd _does_ have it; dropping it makes "your GoCD server is the only host contacted" unconditional.                                                                                                                                                                                                                                                                                                                                                                       |
+| **Run with variables**                          | Unused. The client still accepts `environmentVariables`; only the UI went.                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| **Export settings**                             | Wrote a JSON with no way to import it back.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| **Sound volume slider**                         | The WAVs are synthesised quiet (~−13 dBFS) and the OS already has a volume control.                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| **Failure-sound picker**                        | Five options collapsed to one fixed double beep.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| **Badge source `auto`**                         | Silently changed what it counted the moment you starred something.                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| **`notifyScope` + `notifyOnRecovery`**          | A scope dropdown and a direction tick collapsed into one _Also notify for starred pipelines_. "All pipelines" was unusable at 900 failures anyway.                                                                                                                                                                                                                                                                                                                                                                              |
+| **OS notification-settings buttons**            | Chrome cannot open System Settings; the URL schemes may be refused silently. The click-path is printed as text instead.                                                                                                                                                                                                                                                                                                                                                                                                         |
 | **Save as a GoCD view (`+` beside the picker)** | Removed on request; the picker is a switch, not an editor. The UI went first and `saveView()` followed: it was the only **write** to `/api/internal/*`, an endpoint with no contract and no version guarantee, kept alive by nothing but optionality. A GoCD maintainer flagged that dependency on a sibling project ([gocd/gocd#14575](https://github.com/gocd/gocd/discussions/14575)) and was right. The read stays, isolated and degrading to `viewsAvailable = false`; a test now pins that `/api/internal/*` is GET-only. |
-| **Per-section row cap (*Show all N*)** | Sections capped at 30 cards. Groups already start collapsed, so expanding one is a deliberate ask; the cap answered it with another button. |
-| **Derived background interval** | Deriving the background cadence from the open-tab interval meant everyone polling every minute. |
+| **Per-section row cap (_Show all N_)**          | Sections capped at 30 cards. Groups already start collapsed, so expanding one is a deliberate ask; the cap answered it with another button.                                                                                                                                                                                                                                                                                                                                                                                     |
+| **Derived background interval**                 | Deriving the background cadence from the open-tab interval meant everyone polling every minute.                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 
 ---
 
@@ -340,11 +340,11 @@ Each of these existed and was removed for a reason:
   `applyOverflowTitles()` runs after each render and compares `scrollWidth`
   against `clientWidth`, so only genuinely clipped text gets a `title`. Titles it
   adds are marked with `data-auto-title` so a deliberate one is never clobbered.
-  A card name is the exception in *when*: it is only clipped once the actions
+  A card name is the exception in _when_: it is only clipped once the actions
   take their space, so the card re-measures on `mouseover` -- which is also why
   those buttons' width does not transition, or the measurement would read a size
   still on its way somewhere.
-- **The theme toggle flips against the *effective* theme.** Cycling
+- **The theme toggle flips against the _effective_ theme.** Cycling
   `system → dark → light` needed two clicks on a machine set to dark, because
   the first was invisible.
 - **The change-highlight is colourless** — an expanding ring, twice. Tinting with
@@ -374,7 +374,7 @@ is a personal profile and the history should read as one author's.
 - **Never run as an installed extension.** No `chrome://extensions` load, no real
   GoCD server, so anything that depends on a real credential, a real permission
   prompt, a real notification or a real alarm is untested by hand.
-  The *rendering* is no longer unseen: `tools/make-screenshots.mjs` serves the
+  The _rendering_ is no longer unseen: `tools/make-screenshots.mjs` serves the
   real pages against fixture replies and photographs them in headless Chrome, so
   layout and theming can be looked at. Use it before guessing at a visual bug.
 - The OS-settings deep links were removed deliberately: Chrome cannot open

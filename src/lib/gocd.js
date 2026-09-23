@@ -12,19 +12,19 @@
 
 /** Names come back from the server and are interpolated into request paths. */
 export function encodeSegment(s) {
-  let out = '';
+  let out = "";
   for (const byte of new TextEncoder().encode(String(s))) {
     const ch = String.fromCharCode(byte);
     if (/[A-Za-z0-9\-._~]/.test(ch)) out += ch;
-    else out += '%' + byte.toString(16).toUpperCase().padStart(2, '0');
+    else out += "%" + byte.toString(16).toUpperCase().padStart(2, "0");
   }
   return out;
 }
 
 export class GoCdError extends Error {
-  constructor(message, { status = 0, kind = 'http' } = {}) {
+  constructor(message, { status = 0, kind = "http" } = {}) {
     super(message);
-    this.name = 'GoCdError';
+    this.name = "GoCdError";
     this.status = status;
     this.kind = kind;
   }
@@ -35,18 +35,18 @@ export class GoCdError extends Error {
  * it answers with an HTML page. Echoing that markup into the UI is noise.
  */
 function summarise(body) {
-  const text = String(body || '').trim();
-  if (!text) return '';
-  if (text.startsWith('<') || /<html/i.test(text)) {
-    return 'a proxy or gateway answered instead of GoCD';
+  const text = String(body || "").trim();
+  if (!text) return "";
+  if (text.startsWith("<") || /<html/i.test(text)) {
+    return "a proxy or gateway answered instead of GoCD";
   }
   try {
     const parsed = JSON.parse(text);
-    if (parsed && typeof parsed.message === 'string') return parsed.message;
+    if (parsed && typeof parsed.message === "string") return parsed.message;
   } catch {
     /* not JSON, fall through to the raw text */
   }
-  return [...text].slice(0, 300).join('');
+  return [...text].slice(0, 300).join("");
 }
 
 const TIMEOUT_MS = 45_000;
@@ -54,13 +54,14 @@ const TIMEOUT_MS = 45_000;
 export class GoCdClient {
   /** @param {import('./store.js').Connection} conn */
   constructor(conn) {
-    if (!conn || !conn.serverUrl) throw new GoCdError('No GoCD server configured', { kind: 'config' });
-    this.base = String(conn.serverUrl).replace(/\/+$/, '');
+    if (!conn || !conn.serverUrl)
+      throw new GoCdError("No GoCD server configured", { kind: "config" });
+    this.base = String(conn.serverUrl).replace(/\/+$/, "");
     this.auth = conn;
   }
 
   get origin() {
-    return new URL(this.base).origin + '/*';
+    return new URL(this.base).origin + "/*";
   }
 
   /**
@@ -71,27 +72,35 @@ export class GoCdClient {
    */
   #authHeaders() {
     const h = {};
-    if (this.auth.authMode === 'token' && this.auth.token) {
+    if (this.auth.authMode === "token" && this.auth.token) {
       h.Authorization = `Bearer ${this.auth.token}`;
-    } else if (this.auth.authMode === 'basic' && this.auth.username) {
-      const raw = `${this.auth.username}:${this.auth.password || ''}`;
+    } else if (this.auth.authMode === "basic" && this.auth.username) {
+      const raw = `${this.auth.username}:${this.auth.password || ""}`;
       h.Authorization = `Basic ${btoa(unescape(encodeURIComponent(raw)))}`;
     }
     return h;
   }
 
   #credentials() {
-    return this.auth.authMode === 'session' ? 'include' : 'omit';
+    return this.auth.authMode === "session" ? "include" : "omit";
   }
 
-  async #send(method, path, { version, body, headers = {}, raw = false, signal } = {}) {
+  async #send(
+    method,
+    path,
+    { version, body, headers = {}, raw = false, signal } = {},
+  ) {
     const url = `${this.base}${path}`;
     const requestHeaders = { ...this.#authHeaders(), ...headers };
-    if (version) requestHeaders.Accept = `application/vnd.go.cd.v${version}+json`;
+    if (version)
+      requestHeaders.Accept = `application/vnd.go.cd.v${version}+json`;
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-    if (signal) signal.addEventListener('abort', () => controller.abort(), { once: true });
+    if (signal)
+      signal.addEventListener("abort", () => controller.abort(), {
+        once: true,
+      });
 
     let response;
     try {
@@ -100,32 +109,40 @@ export class GoCdClient {
         headers: requestHeaders,
         body,
         credentials: this.#credentials(),
-        cache: 'no-store',
-        redirect: 'follow',
+        cache: "no-store",
+        redirect: "follow",
         signal: controller.signal,
       });
     } catch (err) {
       clearTimeout(timer);
-      if (err.name === 'AbortError') {
-        throw new GoCdError('GoCD did not answer in time', { kind: 'timeout' });
+      if (err.name === "AbortError") {
+        throw new GoCdError("GoCD did not answer in time", { kind: "timeout" });
       }
       throw new GoCdError(
         `Cannot reach ${this.base} -- check the URL, your VPN, and that this extension has permission for that host.`,
-        { kind: 'network' },
+        { kind: "network" },
       );
     }
     clearTimeout(timer);
 
-    if (response.status === 304) return { notModified: true, etag: response.headers.get('ETag') };
+    if (response.status === 304)
+      return { notModified: true, etag: response.headers.get("ETag") };
 
     // GoCD answers an unauthenticated browser request with a redirect to the
     // login page, which `redirect: follow` turns into an HTML 200. Treat that
     // as the 401 it really is instead of trying to parse a login form as JSON.
-    if (raw === false && response.redirected && /\/auth\/login/.test(response.url)) {
-      throw new GoCdError('GoCD redirected to its login page -- your session has expired.', {
-        status: 401,
-        kind: 'auth',
-      });
+    if (
+      raw === false &&
+      response.redirected &&
+      /\/auth\/login/.test(response.url)
+    ) {
+      throw new GoCdError(
+        "GoCD redirected to its login page -- your session has expired.",
+        {
+          status: 401,
+          kind: "auth",
+        },
+      );
     }
 
     const text = await response.text();
@@ -133,37 +150,46 @@ export class GoCdClient {
     if (!response.ok) {
       const detail = summarise(text);
       if (response.status === 401) {
-        throw new GoCdError(`GoCD rejected the credential (401). ${detail}`.trim(), {
-          status: 401,
-          kind: 'auth',
-        });
+        throw new GoCdError(
+          `GoCD rejected the credential (401). ${detail}`.trim(),
+          {
+            status: 401,
+            kind: "auth",
+          },
+        );
       }
       if (response.status === 403) {
         throw new GoCdError(
-          `GoCD refused this action (403). ${detail || 'Your account may not have permission, or the server wants a CSRF token -- a personal access token avoids that.'}`,
-          { status: 403, kind: 'forbidden' },
+          `GoCD refused this action (403). ${detail || "Your account may not have permission, or the server wants a CSRF token -- a personal access token avoids that."}`,
+          { status: 403, kind: "forbidden" },
         );
       }
       if (response.status === 404) {
-        throw new GoCdError(`Not found on this GoCD server (404). ${detail}`.trim(), {
-          status: 404,
-          kind: 'missing',
-        });
+        throw new GoCdError(
+          `Not found on this GoCD server (404). ${detail}`.trim(),
+          {
+            status: 404,
+            kind: "missing",
+          },
+        );
       }
-      throw new GoCdError(`GoCD returned ${response.status}. ${detail}`.trim(), {
-        status: response.status,
-      });
+      throw new GoCdError(
+        `GoCD returned ${response.status}. ${detail}`.trim(),
+        {
+          status: response.status,
+        },
+      );
     }
 
-    if (raw) return { text, etag: response.headers.get('ETag') };
+    if (raw) return { text, etag: response.headers.get("ETag") };
 
-    if (!text.trim()) return { data: null, etag: response.headers.get('ETag') };
+    if (!text.trim()) return { data: null, etag: response.headers.get("ETag") };
     try {
-      return { data: JSON.parse(text), etag: response.headers.get('ETag') };
+      return { data: JSON.parse(text), etag: response.headers.get("ETag") };
     } catch {
       throw new GoCdError(
-        'GoCD sent something that is not JSON -- usually a proxy, a login page, or the wrong URL (it should end in /go).',
-        { kind: 'parse' },
+        "GoCD sent something that is not JSON -- usually a proxy, a login page, or the wrong URL (it should end in /go).",
+        { kind: "parse" },
       );
     }
   }
@@ -190,9 +216,12 @@ export class GoCdClient {
     // an empty view is the most expensive request the extension can make.
     const query = view
       ? `?viewName=${encodeURIComponent(view)}&allowEmpty=true`
-      : '';
-    const headers = etag ? { 'If-None-Match': etag } : {};
-    const res = await this.#send('GET', `/api/dashboard${query}`, { version: 4, headers });
+      : "";
+    const headers = etag ? { "If-None-Match": etag } : {};
+    const res = await this.#send("GET", `/api/dashboard${query}`, {
+      version: 4,
+      headers,
+    });
     if (res.notModified) return { notModified: true, etag: res.etag || etag };
     const embedded = res.data?._embedded || {};
     return {
@@ -204,9 +233,9 @@ export class GoCdClient {
 
   /** One page of run history, newest first. `after` is the cursor from the previous page. */
   async history(pipeline, { after = null } = {}) {
-    const query = after == null ? '' : `?after=${encodeURIComponent(after)}`;
+    const query = after == null ? "" : `?after=${encodeURIComponent(after)}`;
     const { data } = await this.#send(
-      'GET',
+      "GET",
       `/api/pipelines/${encodeSegment(pipeline)}/history${query}`,
       { version: 1 },
     );
@@ -218,7 +247,7 @@ export class GoCdClient {
 
   async instance(pipeline, counter) {
     const { data } = await this.#send(
-      'GET',
+      "GET",
       `/api/pipelines/${encodeSegment(pipeline)}/${encodeURIComponent(counter)}`,
       { version: 1 },
     );
@@ -237,7 +266,7 @@ export class GoCdClient {
    */
   async stageInstance(pipeline, counter, stage, stageCounter) {
     const { data } = await this.#send(
-      'GET',
+      "GET",
       `/api/stages/${encodeSegment(pipeline)}/${encodeURIComponent(counter)}` +
         `/${encodeSegment(stage)}/${encodeSegment(stageCounter)}`,
       { version: 3 },
@@ -262,10 +291,17 @@ export class GoCdClient {
    * move to it the same day.
    */
   async views() {
-    const { data, etag } = await this.#send('GET', '/api/internal/pipeline_selection', {
-      version: 1,
-    });
-    return { filters: data?.filters || [], etag: etag ? etag.replace('--gzip', '') : null };
+    const { data, etag } = await this.#send(
+      "GET",
+      "/api/internal/pipeline_selection",
+      {
+        version: 1,
+      },
+    );
+    return {
+      filters: data?.filters || [],
+      etag: etag ? etag.replace("--gzip", "") : null,
+    };
   }
 
   /** Artifact tree for one job, from the plain file-server .json listing. */
@@ -273,7 +309,7 @@ export class GoCdClient {
     const path =
       `/files/${encodeSegment(pipeline)}/${encodeURIComponent(counter)}` +
       `/${encodeSegment(stage)}/${encodeSegment(stageCounter)}/${encodeSegment(job)}.json`;
-    const { data } = await this.#send('GET', path, {});
+    const { data } = await this.#send("GET", path, {});
     return data || [];
   }
 
@@ -288,17 +324,19 @@ export class GoCdClient {
       `/${encodeSegment(stage)}/${encodeSegment(stageCounter)}/${encodeSegment(job)}` +
       `/cruise-output/console.log`;
     if (startLine > 0) path += `?startLineNumber=${startLine}`;
-    const { text } = await this.#send('GET', path, { raw: true });
+    const { text } = await this.#send("GET", path, { raw: true });
     return text;
   }
 
   async currentUser() {
-    const { data } = await this.#send('GET', '/api/current_user', { version: 1 });
+    const { data } = await this.#send("GET", "/api/current_user", {
+      version: 1,
+    });
     return data;
   }
 
   async version() {
-    const { data } = await this.#send('GET', '/api/version', { version: 1 });
+    const { data } = await this.#send("GET", "/api/version", { version: 1 });
     return data;
   }
 
@@ -309,43 +347,56 @@ export class GoCdClient {
    * form post, which is what GoCD's CSRF guard is looking for.
    */
   #mutate(path, { version, body }) {
-    const headers = { 'X-GoCD-Confirm': 'true' };
-    if (body) headers['Content-Type'] = 'application/json';
-    return this.#send('POST', path, { version, headers, body });
+    const headers = { "X-GoCD-Confirm": "true" };
+    if (body) headers["Content-Type"] = "application/json";
+    return this.#send("POST", path, { version, headers, body });
   }
 
   async trigger(pipeline, environmentVariables = []) {
     const body =
       environmentVariables.length > 0
         ? JSON.stringify({
-            environment_variables: environmentVariables.map(({ name, value }) => ({
-              name,
-              value,
-              secure: false,
-            })),
+            environment_variables: environmentVariables.map(
+              ({ name, value }) => ({
+                name,
+                value,
+                secure: false,
+              }),
+            ),
             update_materials_before_scheduling: true,
           })
-        : '{}';
-    await this.#mutate(`/api/pipelines/${encodeSegment(pipeline)}/schedule`, { version: 1, body });
+        : "{}";
+    await this.#mutate(`/api/pipelines/${encodeSegment(pipeline)}/schedule`, {
+      version: 1,
+      body,
+    });
   }
 
   async pause(pipeline, cause) {
     await this.#mutate(`/api/pipelines/${encodeSegment(pipeline)}/pause`, {
       version: 1,
-      body: JSON.stringify({ pause_cause: cause || 'Paused from GoCD Lens' }),
+      body: JSON.stringify({ pause_cause: cause || "Paused from GoCD Lens" }),
     });
   }
 
   async unpause(pipeline) {
-    await this.#mutate(`/api/pipelines/${encodeSegment(pipeline)}/unpause`, { version: 1 });
+    await this.#mutate(`/api/pipelines/${encodeSegment(pipeline)}/unpause`, {
+      version: 1,
+    });
   }
 
   async cancelStage(pipeline, counter, stage, stageCounter) {
-    await this.#stageVerb(pipeline, counter, stage, stageCounter, 'cancel');
+    await this.#stageVerb(pipeline, counter, stage, stageCounter, "cancel");
   }
 
   async rerunFailedJobs(pipeline, counter, stage, stageCounter) {
-    await this.#stageVerb(pipeline, counter, stage, stageCounter, 'run-failed-jobs');
+    await this.#stageVerb(
+      pipeline,
+      counter,
+      stage,
+      stageCounter,
+      "run-failed-jobs",
+    );
   }
 
   /**
@@ -394,13 +445,13 @@ export class GoCdClient {
   webUrl(kind, parts = {}) {
     const { pipeline, counter, stage, stageCounter, job } = parts;
     switch (kind) {
-      case 'pipeline':
+      case "pipeline":
         return `${this.base}/pipeline/activity/${encodeSegment(pipeline)}`;
-      case 'run':
+      case "run":
         return `${this.base}/pipelines/value_stream_map/${encodeSegment(pipeline)}/${counter}`;
-      case 'stage':
+      case "stage":
         return `${this.base}/pipelines/${encodeSegment(pipeline)}/${counter}/${encodeSegment(stage)}/${encodeSegment(stageCounter)}`;
-      case 'job':
+      case "job":
         return `${this.base}/tab/build/detail/${encodeSegment(pipeline)}/${counter}/${encodeSegment(stage)}/${encodeSegment(stageCounter)}/${encodeSegment(job)}`;
       default:
         return this.base;
@@ -421,9 +472,9 @@ export function originPattern(serverUrl) {
 /** Cursor for the next history page, parsed from _links.next.href's ?after=<n>. */
 export function nextPageCursor(href) {
   if (!href) return null;
-  const query = String(href).split('?')[1];
+  const query = String(href).split("?")[1];
   if (!query) return null;
-  const after = new URLSearchParams(query).get('after');
+  const after = new URLSearchParams(query).get("after");
   if (after == null) return null;
   const n = Number(after);
   return Number.isSafeInteger(n) ? n : null;

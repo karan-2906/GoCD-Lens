@@ -5,14 +5,14 @@
  */
 
 export const STATUS = {
-  Failed: { label: 'Failed', tone: 'fail', rank: 0 },
-  Cancelled: { label: 'Cancelled', tone: 'cancel', rank: 1 },
-  Building: { label: 'Building', tone: 'build', rank: 2 },
+  Failed: { label: "Failed", tone: "fail", rank: 0 },
+  Cancelled: { label: "Cancelled", tone: "cancel", rank: 1 },
+  Building: { label: "Building", tone: "build", rank: 2 },
   // Not produced by `rollup`, but `jobStatus` and raw stage statuses both use
   // it, and a queued job showing as "Never run" reads as a bug.
-  Scheduled: { label: 'Queued', tone: 'build', rank: 2 },
-  Passed: { label: 'Passed', tone: 'pass', rank: 3 },
-  Unknown: { label: 'Never run', tone: 'idle', rank: 4 },
+  Scheduled: { label: "Queued", tone: "build", rank: 2 },
+  Passed: { label: "Passed", tone: "pass", rank: 3 },
+  Unknown: { label: "Never run", tone: "idle", rank: 4 },
 };
 
 /**
@@ -48,17 +48,17 @@ export function rollup(statuses) {
 
   for (const status of statuses) {
     switch (status) {
-      case 'Passed':
+      case "Passed":
         anyPassed = true;
         break;
-      case 'Failed':
+      case "Failed":
         anyFailed = true;
         break;
-      case 'Cancelled':
+      case "Cancelled":
         anyCancelled = true;
         break;
-      case 'Building':
-      case 'Scheduled':
+      case "Building":
+      case "Scheduled":
         anyBuilding = true;
         break;
       default:
@@ -66,11 +66,11 @@ export function rollup(statuses) {
     }
   }
 
-  if (anyBuilding) return 'Building';
-  if (anyFailed) return 'Failed';
-  if (anyCancelled) return 'Cancelled';
-  if (anyPassed) return 'Passed';
-  return 'Unknown';
+  if (anyBuilding) return "Building";
+  if (anyFailed) return "Failed";
+  if (anyCancelled) return "Cancelled";
+  if (anyPassed) return "Passed";
+  return "Unknown";
 }
 
 /**
@@ -84,28 +84,31 @@ export function rollup(statuses) {
  * once you opened it.
  */
 export function stageStatus(stage) {
-  if (!stage) return 'Unknown';
+  if (!stage) return "Unknown";
 
   // GoCD sends the *string* "Unknown" for a stage it has nothing to say about,
   // and that is not an answer -- it must not shadow the jobs, which may well be
   // building. This is how a stage with a running job read as never-run.
-  const declared = [stage.status, stage.result].find((value) => value && value !== 'Unknown');
+  const declared = [stage.status, stage.result].find(
+    (value) => value && value !== "Unknown",
+  );
   if (declared) return declared;
 
   const jobs = stage.jobs || [];
-  if (jobs.length === 0) return 'Unknown';
+  if (jobs.length === 0) return "Unknown";
   // A job that has not completed is proof the stage is still going.
-  if (jobs.some((job) => job.state && job.state !== 'Completed')) return 'Building';
-  if (jobs.some((job) => job.result === 'Failed')) return 'Failed';
-  if (jobs.some((job) => job.result === 'Cancelled')) return 'Cancelled';
-  if (jobs.every((job) => job.result === 'Passed')) return 'Passed';
-  return 'Unknown';
+  if (jobs.some((job) => job.state && job.state !== "Completed"))
+    return "Building";
+  if (jobs.some((job) => job.result === "Failed")) return "Failed";
+  if (jobs.some((job) => job.result === "Cancelled")) return "Cancelled";
+  if (jobs.every((job) => job.result === "Passed")) return "Passed";
+  return "Unknown";
 }
 
 /** Rollup for a dashboard pipeline entry (its most recent run). */
 export function pipelineStatus(pipeline) {
   const instance = pipeline?._embedded?.instances?.[0];
-  if (!instance) return 'Unknown';
+  if (!instance) return "Unknown";
   return rollup((instance._embedded?.stages || []).map(stageStatus));
 }
 
@@ -116,17 +119,17 @@ export function runStatus(run) {
 
 /** Running right now, and therefore cancellable. */
 export function isActive(status) {
-  return status === 'Building' || status === 'Scheduled';
+  return status === "Building" || status === "Scheduled";
 }
 
 export function jobStatus(job) {
-  if (job?.state && job.state !== 'Completed') {
-    return job.state === 'Scheduled' ? 'Scheduled' : 'Building';
+  if (job?.state && job.state !== "Completed") {
+    return job.state === "Scheduled" ? "Scheduled" : "Building";
   }
-  if (job?.result === 'Passed') return 'Passed';
-  if (job?.result === 'Cancelled') return 'Cancelled';
-  if (job?.result === 'Failed') return 'Failed';
-  return 'Unknown';
+  if (job?.result === "Passed") return "Passed";
+  if (job?.result === "Cancelled") return "Cancelled";
+  if (job?.result === "Failed") return "Failed";
+  return "Unknown";
 }
 
 // --------------------------------------------------------------------- time
@@ -149,22 +152,24 @@ export function runScheduledAt(run) {
   if (own) return own;
 
   const stages = run?._embedded?.stages || run?.stages || [];
-  const times = stages.map((stage) => epochOf(stage?.scheduled_at ?? stage?.scheduled_date)).filter(Boolean);
+  const times = stages
+    .map((stage) => epochOf(stage?.scheduled_at ?? stage?.scheduled_date))
+    .filter(Boolean);
   return times.length ? Math.min(...times) : 0;
 }
 
 /** The dashboard sends an ISO string where the history endpoint sends millis. */
 function epochOf(value) {
-  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
-  if (typeof value !== 'string' || !value) return 0;
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  if (typeof value !== "string" || !value) return 0;
   const parsed = Date.parse(value);
   return Number.isNaN(parsed) ? 0 : parsed;
 }
 
 export function timeAgo(epochMillis, now = Date.now()) {
-  if (!epochMillis) return '';
+  if (!epochMillis) return "";
   const seconds = Math.max(0, Math.round((now - epochMillis) / 1000));
-  if (seconds < 45) return 'just now';
+  if (seconds < 45) return "just now";
   const minutes = Math.round(seconds / 60);
   if (minutes < 60) return `${minutes}m ago`;
   const hours = Math.round(minutes / 60);
@@ -182,9 +187,9 @@ export function timeAgo(epochMillis, now = Date.now()) {
  * than sit on "just now" for the best part of a minute.
  */
 export function freshnessAgo(epochMillis, now = Date.now()) {
-  if (!epochMillis) return '';
+  if (!epochMillis) return "";
   const seconds = Math.max(0, Math.round((now - epochMillis) / 1000));
-  if (seconds < 5) return 'just now';
+  if (seconds < 5) return "just now";
   if (seconds < 60) return `${seconds}s ago`;
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m ago`;
@@ -194,7 +199,7 @@ export function freshnessAgo(epochMillis, now = Date.now()) {
 }
 
 export function duration(ms) {
-  if (!ms || ms < 0) return '';
+  if (!ms || ms < 0) return "";
   const seconds = Math.round(ms / 1000);
   if (seconds < 60) return `${seconds}s`;
   const minutes = Math.floor(seconds / 60);
@@ -205,13 +210,13 @@ export function duration(ms) {
 }
 
 export function absoluteTime(epochMillis) {
-  if (!epochMillis) return '';
+  if (!epochMillis) return "";
   return new Date(epochMillis).toLocaleString(undefined, {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
@@ -228,7 +233,7 @@ export function fuzzyMatch(needle, haystack) {
   const positions = [];
   let at = 0;
   for (const ch of query) {
-    if (ch === ' ') continue;
+    if (ch === " ") continue;
     const found = text.indexOf(ch, at);
     if (found === -1) return null;
     positions.push(found);
@@ -260,28 +265,37 @@ const SAFE_SEGMENT = /^[A-Za-z0-9._\-]+$/;
  */
 export function parseGitMaterial(description) {
   if (!description) return null;
-  const afterUrl = String(description).split('URL: ')[1];
+  const afterUrl = String(description).split("URL: ")[1];
   if (!afterUrl) return null;
-  const url = afterUrl.split(',')[0].trim();
+  const url = afterUrl.split(",")[0].trim();
 
   let host;
   let rest;
-  if (url.startsWith('git@')) {
-    [host, rest] = splitOnce(url.slice(4), ':');
+  if (url.startsWith("git@")) {
+    [host, rest] = splitOnce(url.slice(4), ":");
   } else {
-    const noScheme = url.replace(/^https?:\/\//, '');
+    const noScheme = url.replace(/^https?:\/\//, "");
     if (noScheme === url) return null;
-    [host, rest] = splitOnce(noScheme, '/');
+    [host, rest] = splitOnce(noScheme, "/");
   }
   if (!host || !rest) return null;
 
-  const trimmed = rest.replace(/^\/+/, '').replace(/\/+$/, '').replace(/\.git$/, '');
-  const [owner, repo] = splitOnce(trimmed, '/');
+  const trimmed = rest
+    .replace(/^\/+/, "")
+    .replace(/\/+$/, "")
+    .replace(/\.git$/, "");
+  const [owner, repo] = splitOnce(trimmed, "/");
   if (!owner || !repo) return null;
-  if (!SAFE_HOST.test(host) || !SAFE_SEGMENT.test(owner) || !SAFE_SEGMENT.test(repo)) return null;
+  if (
+    !SAFE_HOST.test(host) ||
+    !SAFE_SEGMENT.test(owner) ||
+    !SAFE_SEGMENT.test(repo)
+  )
+    return null;
 
-  const branchAt = description.indexOf('Branch: ');
-  const branch = branchAt === -1 ? 'main' : description.slice(branchAt + 8).trim() || 'main';
+  const branchAt = description.indexOf("Branch: ");
+  const branch =
+    branchAt === -1 ? "main" : description.slice(branchAt + 8).trim() || "main";
   return { host, owner, repo, branch };
 }
 
@@ -296,7 +310,7 @@ export function gitRefs(run) {
   const revisions = run?.build_cause?.material_revisions || [];
   const out = [];
   for (const revision of revisions) {
-    if (revision.material?.type !== 'Git') continue;
+    if (revision.material?.type !== "Git") continue;
     const parsed = parseGitMaterial(revision.material?.description);
     if (!parsed) continue;
     const sha = revision.modifications?.[0]?.revision;
@@ -315,10 +329,10 @@ export function upstreamDeps(run) {
   const revisions = run?.build_cause?.material_revisions || [];
   const out = [];
   for (const revision of revisions) {
-    if (revision.material?.type !== 'Pipeline') continue;
+    if (revision.material?.type !== "Pipeline") continue;
     const rev = revision.modifications?.[0]?.revision;
     if (!rev) continue;
-    const [name, counterText] = rev.split('/');
+    const [name, counterText] = rev.split("/");
     const counter = Number(counterText);
     if (name && Number.isSafeInteger(counter)) out.push({ name, counter });
   }
@@ -332,14 +346,27 @@ export function commitUrl(ref) {
 // ---------------------------------------------------------------- artifacts
 
 /** Rows currently visible in the artifact tree, given the set of open folders. */
-export function flattenArtifacts(nodes, expanded, depth = 0, prefix = '', out = []) {
+export function flattenArtifacts(
+  nodes,
+  expanded,
+  depth = 0,
+  prefix = "",
+  out = [],
+) {
   for (const node of nodes || []) {
     // GoCD marks folders with a type, but a node carrying children is one
     // regardless of what the type field says.
-    const isFolder = node.type === 'folder' || (node.files || []).length > 0;
+    const isFolder = node.type === "folder" || (node.files || []).length > 0;
     const path = prefix ? `${prefix}/${node.name}` : node.name;
     const open = isFolder && expanded.has(path);
-    out.push({ depth, name: node.name, isFolder, url: node.url || null, path, expanded: open });
+    out.push({
+      depth,
+      name: node.name,
+      isFolder,
+      url: node.url || null,
+      path,
+      expanded: open,
+    });
     if (open) flattenArtifacts(node.files, expanded, depth + 1, path, out);
   }
   return out;
@@ -354,10 +381,13 @@ export function flattenArtifacts(nodes, expanded, depth = 0, prefix = '', out = 
  * stripped, because we are not rendering a terminal.
  */
 const FRAME = /^([a-z]{2})\|(\d{2}:\d{2}:\d{2}\.\d{3})\s?(.*)$/i;
-const ANSI = new RegExp(String.fromCharCode(27) + '\\[[0-9;?]*[ -/]*[@-~]', 'g');
+const ANSI = new RegExp(
+  String.fromCharCode(27) + "\\[[0-9;?]*[ -/]*[@-~]",
+  "g",
+);
 
 export function parseLogLine(line) {
-  const stripped = line.replace(ANSI, '').replace(/\r$/, '');
+  const stripped = line.replace(ANSI, "").replace(/\r$/, "");
   const framed = FRAME.exec(stripped);
   const time = framed ? framed[2] : null;
   const body = framed ? framed[3] : stripped;
@@ -366,9 +396,11 @@ export function parseLogLine(line) {
 
 function severityOf(body) {
   const text = body.toLowerCase();
-  if (/(^|\W)(error|failed|failure|fatal|exception|panic)(\W|$)/.test(text)) return 'error';
-  if (/(^|\W)(warn|warning|deprecated)(\W|$)/.test(text)) return 'warn';
-  if (/(^|\W)(success|succeeded|passed|up to date)(\W|$)/.test(text)) return 'ok';
-  if (/^\s*\[go\]|^\s*\[agent\]/.test(text)) return 'meta';
-  return 'plain';
+  if (/(^|\W)(error|failed|failure|fatal|exception|panic)(\W|$)/.test(text))
+    return "error";
+  if (/(^|\W)(warn|warning|deprecated)(\W|$)/.test(text)) return "warn";
+  if (/(^|\W)(success|succeeded|passed|up to date)(\W|$)/.test(text))
+    return "ok";
+  if (/^\s*\[go\]|^\s*\[agent\]/.test(text)) return "meta";
+  return "plain";
 }

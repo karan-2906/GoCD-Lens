@@ -4,7 +4,7 @@
  * pipeline page when that page will not load.
  */
 
-import { el, icon, send, explain, copyToClipboard } from '../common/ui.js';
+import { el, icon, send, explain, copyToClipboard } from "../common/ui.js";
 import {
   runStatus,
   stageStatus,
@@ -16,7 +16,7 @@ import {
   gitRefs,
   upstreamDeps,
   commitUrl,
-} from '../lib/status.js';
+} from "../lib/status.js";
 import {
   state,
   navigate,
@@ -35,8 +35,8 @@ import {
   rerunStage,
   openInGoCd,
   rerender,
-} from './state.js';
-import { openJobViewer } from './job-viewer.js';
+} from "./state.js";
+import { openJobViewer } from "./job-viewer.js";
 
 /** Per-pipeline history, kept between renders so paging and selection survive. */
 const historyCache = new Map();
@@ -56,7 +56,7 @@ const historyCache = new Map();
 const selections = new Map();
 
 const selectionKey = (pipeline, counter, stage, stageCounter) =>
-  [pipeline, counter, stage, stageCounter].join('\u0000');
+  [pipeline, counter, stage, stageCounter].join("\u0000");
 
 /**
  * Which attempt of a re-run stage is on screen, for the stages where that is
@@ -72,7 +72,8 @@ const attemptChoice = new Map();
 /** Fetched attempts. A finished attempt never changes, so one request each. */
 const attemptCache = new Map();
 
-const attemptKey = (pipeline, counter, stage) => [pipeline, counter, stage].join('\u0000');
+const attemptKey = (pipeline, counter, stage) =>
+  [pipeline, counter, stage].join("\u0000");
 
 export function renderPipeline(host, name) {
   // Bound the store: only the pipeline on screen can have a live selection.
@@ -101,21 +102,26 @@ export function renderPipeline(host, name) {
   if (entry.error) {
     host.append(
       el(
-        'div',
-        { class: 'banner banner-error' },
-        icon('alert'),
-        el('span', { text: entry.error }),
+        "div",
+        { class: "banner banner-error" },
+        icon("alert"),
+        el("span", { text: entry.error }),
         el(
-          'span',
-          { class: 'banner-actions' },
-          el('button', { class: 'btn btn-sm', text: 'Try again', onclick: () => loadHistory(name, { reset: true }) }),
+          "span",
+          { class: "banner-actions" },
+          el("button", {
+            class: "btn btn-sm",
+            text: "Try again",
+            onclick: () => loadHistory(name, { reset: true }),
+          }),
         ),
       ),
     );
     return;
   }
 
-  const selected = entry.runs.find((r) => r.counter === entry.selected) || entry.runs[0];
+  const selected =
+    entry.runs.find((r) => r.counter === entry.selected) || entry.runs[0];
 
   // The dashboard payload and the history page are separate endpoints and the
   // history one lags: a run can be live on the dashboard seconds before it
@@ -124,18 +130,18 @@ export function renderPipeline(host, name) {
   if (latestKnown && (!selected || latestKnown.counter > selected.counter)) {
     host.append(
       el(
-        'div',
-        { class: 'banner banner-info', style: { marginBottom: '14px' } },
-        icon('activity'),
-        el('span', {
+        "div",
+        { class: "banner banner-info", style: { marginBottom: "14px" } },
+        icon("activity"),
+        el("span", {
           text: `Run #${latestKnown.counter} has started. GoCD has not published it to the run history yet -- it will appear here shortly.`,
         }),
         el(
-          'span',
-          { class: 'banner-actions' },
-          el('button', {
-            class: 'btn btn-sm',
-            text: 'Check now',
+          "span",
+          { class: "banner-actions" },
+          el("button", {
+            class: "btn btn-sm",
+            text: "Check now",
             onclick: () => loadHistory(name, { reset: true }),
           }),
         ),
@@ -145,10 +151,20 @@ export function renderPipeline(host, name) {
 
   host.append(
     el(
-      'div',
-      { class: 'split' },
+      "div",
+      { class: "split" },
       historyPanel(name, entry, selected),
-      selected ? runPanel(name, selected) : el('div', { class: 'panel' }, el('div', { class: 'empty' }, el('p', { text: 'This pipeline has never run.' }))),
+      selected
+        ? runPanel(name, selected)
+        : el(
+            "div",
+            { class: "panel" },
+            el(
+              "div",
+              { class: "empty" },
+              el("p", { text: "This pipeline has never run." }),
+            ),
+          ),
     ),
   );
 
@@ -157,13 +173,17 @@ export function renderPipeline(host, name) {
   // place you were not looking. `host` is already in the document here, so the
   // list is live and its scroll position takes effect immediately.
   if (entry.scrollTop) {
-    const list = host.querySelector('.run-list');
+    const list = host.querySelector(".run-list");
     if (list) list.scrollTop = entry.scrollTop;
   }
 }
 
 function skeleton() {
-  return el('div', { class: 'grid' }, ...[0, 1, 2].map(() => el('div', { class: 'skeleton' })));
+  return el(
+    "div",
+    { class: "grid" },
+    ...[0, 1, 2].map(() => el("div", { class: "skeleton" })),
+  );
 }
 
 // ----------------------------------------------------------------- header
@@ -176,40 +196,87 @@ function header(name, pipeline) {
   const previous = backTarget();
 
   return el(
-    'div',
-    { class: 'detail-head' },
+    "div",
+    { class: "detail-head" },
     // Says where it goes, because from here it is not always the list: open the
     // run that triggered this one and back is the pipeline you came from.
     el(
-      'button',
-      { class: 'icon-btn', title: previous ? `Back to ${previous}` : 'Back to all pipelines', onclick: () => goBack() },
-      icon('chevron-left'),
+      "button",
+      {
+        class: "icon-btn",
+        title: previous ? `Back to ${previous}` : "Back to all pipelines",
+        onclick: () => goBack(),
+      },
+      icon("chevron-left"),
     ),
     el(
-      'div',
+      "div",
       {},
-      el('h1', { text: name }),
-      group && el('div', { class: 'crumb', text: group }),
+      el("h1", { text: name }),
+      group && el("div", { class: "crumb", text: group }),
     ),
-    paused && el('span', { class: 'paused-flag' }, icon('pause', { size: 13 }), 'Paused'),
-    el(
-      'div',
-      { class: 'detail-actions' },
+    paused &&
       el(
-        'button',
+        "span",
+        { class: "paused-flag" },
+        icon("pause", { size: 13 }),
+        "Paused",
+      ),
+    el(
+      "div",
+      { class: "detail-actions" },
+      el(
+        "button",
         {
-          class: `icon-btn${watching ? ' watching' : ''}`,
-          title: watching ? 'Stop notifying me about this' : 'Notify me when this starts and finishes',
+          class: `icon-btn${watching ? " watching" : ""}`,
+          title: watching
+            ? "Stop notifying me about this"
+            : "Notify me when this starts and finishes",
           onclick: () => toggleWatch(name),
         },
-        icon(watching ? 'bell-filled' : 'bell'),
+        icon(watching ? "bell-filled" : "bell"),
       ),
-      el('button', { class: `icon-btn${starred ? ' starred' : ''}`, title: starred ? 'Unstar' : 'Star', onclick: () => toggleStar(name) }, icon(starred ? 'star-filled' : 'star')),
-      el('button', { class: 'btn btn-sm', onclick: () => triggerPipeline(name) }, icon('play', { size: 13 }), 'Run'),
+      el(
+        "button",
+        {
+          class: `icon-btn${starred ? " starred" : ""}`,
+          title: starred ? "Unstar" : "Star",
+          onclick: () => toggleStar(name),
+        },
+        icon(starred ? "star-filled" : "star"),
+      ),
+      el(
+        "button",
+        { class: "btn btn-sm", onclick: () => triggerPipeline(name) },
+        icon("play", { size: 13 }),
+        "Run",
+      ),
       pipeline &&
-        el('button', { class: 'btn btn-sm', onclick: () => togglePause(pipeline) }, icon(paused ? 'play' : 'pause', { size: 13 }), paused ? 'Resume' : 'Pause'),
-      el('button', { class: 'btn btn-sm', title: 'Open this pipeline in the GoCD web UI', onclick: () => openInGoCd('pipeline', { pipeline: name }) }, icon('external', { size: 13 }), 'GoCD'),
-      el('button', { class: 'icon-btn', title: 'Reload history', onclick: () => loadHistory(name, { reset: true }) }, icon('refresh')),
+        el(
+          "button",
+          { class: "btn btn-sm", onclick: () => togglePause(pipeline) },
+          icon(paused ? "play" : "pause", { size: 13 }),
+          paused ? "Resume" : "Pause",
+        ),
+      el(
+        "button",
+        {
+          class: "btn btn-sm",
+          title: "Open this pipeline in the GoCD web UI",
+          onclick: () => openInGoCd("pipeline", { pipeline: name }),
+        },
+        icon("external", { size: 13 }),
+        "GoCD",
+      ),
+      el(
+        "button",
+        {
+          class: "icon-btn",
+          title: "Reload history",
+          onclick: () => loadHistory(name, { reset: true }),
+        },
+        icon("refresh"),
+      ),
     ),
   );
 }
@@ -217,30 +284,35 @@ function header(name, pipeline) {
 // ---------------------------------------------------------------- history
 
 function historyPanel(name, entry, selected) {
-  const list = el('div', { class: 'run-list' });
+  const list = el("div", { class: "run-list" });
 
   for (const run of entry.runs) {
     const status = runStatus(run);
     const author = run.build_cause?.approver || firstAuthor(run);
     list.append(
       el(
-        'button',
+        "button",
         {
-          class: 'run-row',
-          'aria-current': String(selected?.counter === run.counter),
+          class: "run-row",
+          "aria-current": String(selected?.counter === run.counter),
           onclick: () => {
             entry.selected = run.counter;
             rerender();
           },
         },
-        el('span', { class: 'run-counter', text: `#${run.counter}` }),
+        el("span", { class: "run-counter", text: `#${run.counter}` }),
         el(
-          'span',
-          { class: 'run-body' },
-          el('span', { class: 'run-label truncate', text: run.label || `Run ${run.counter}` }),
-          el('span', {
-            class: 'run-sub truncate',
-            text: [timeAgo(run.scheduled_date), author].filter(Boolean).join(' - '),
+          "span",
+          { class: "run-body" },
+          el("span", {
+            class: "run-label truncate",
+            text: run.label || `Run ${run.counter}`,
+          }),
+          el("span", {
+            class: "run-sub truncate",
+            text: [timeAgo(run.scheduled_date), author]
+              .filter(Boolean)
+              .join(" - "),
             title: absoluteTime(run.scheduled_date),
           }),
         ),
@@ -251,29 +323,42 @@ function historyPanel(name, entry, selected) {
 
   if (entry.next != null) {
     list.append(
-      el('button', {
-        class: 'load-more',
-        text: entry.loading ? 'Loading...' : 'Load older runs',
+      el("button", {
+        class: "load-more",
+        text: entry.loading ? "Loading..." : "Load older runs",
         disabled: entry.loading,
         onclick: () => loadHistory(name),
       }),
     );
   } else if (entry.runs.length) {
-    list.append(el('div', { class: 'load-more faint', text: 'That is the whole history.' }));
+    list.append(
+      el("div", {
+        class: "load-more faint",
+        text: "That is the whole history.",
+      }),
+    );
   }
 
   // Reaching the bottom pages automatically, so scrolling just keeps working.
-  list.addEventListener('scroll', () => {
+  list.addEventListener("scroll", () => {
     // Kept on the cache entry, which outlives the render that rebuilt this list.
     entry.scrollTop = list.scrollTop;
     if (entry.loading || entry.next == null) return;
-    if (list.scrollTop + list.clientHeight >= list.scrollHeight - 80) loadHistory(name);
+    if (list.scrollTop + list.clientHeight >= list.scrollHeight - 80)
+      loadHistory(name);
   });
 
   return el(
-    'div',
-    { class: 'panel' },
-    el('div', { class: 'panel-head' }, icon('clock', { size: 13 }), 'Run history', el('span', { class: 'spacer' }), el('span', { text: String(entry.runs.length) })),
+    "div",
+    { class: "panel" },
+    el(
+      "div",
+      { class: "panel-head" },
+      icon("clock", { size: 13 }),
+      "Run history",
+      el("span", { class: "spacer" }),
+      el("span", { text: String(entry.runs.length) }),
+    ),
     list,
   );
 }
@@ -281,9 +366,9 @@ function historyPanel(name, entry, selected) {
 function firstAuthor(run) {
   for (const revision of run.build_cause?.material_revisions || []) {
     const user = revision.modifications?.[0]?.user_name;
-    if (user) return user.replace(/\s*<[^>]*>\s*$/, '');
+    if (user) return user.replace(/\s*<[^>]*>\s*$/, "");
   }
-  return '';
+  return "";
 }
 
 /**
@@ -339,10 +424,11 @@ async function loadHistory(name, { reset = false, silent = false } = {}) {
   let changed = !silent;
   try {
     const after = reset ? null : entry.next;
-    const { runs, next } = await send('history', { pipeline: name, after });
+    const { runs, next } = await send("history", { pipeline: name, after });
     const merged = reset ? runs : [...entry.runs, ...runs];
     const fingerprint = historyFingerprint(merged);
-    changed = changed || fingerprint !== entry.fingerprint || next !== entry.next;
+    changed =
+      changed || fingerprint !== entry.fingerprint || next !== entry.next;
     entry.runs = merged;
     entry.next = next;
     entry.fingerprint = fingerprint;
@@ -359,14 +445,16 @@ async function loadHistory(name, { reset = false, silent = false } = {}) {
 
 /** Called by the auto-refresh tick so an open pipeline page stays live too. */
 export function refreshOpenPipeline() {
-  if (state.route.kind !== 'pipeline') return;
+  if (state.route.kind !== "pipeline") return;
   const entry = historyCache.get(state.route.name);
   if (!entry || entry.loading) return;
   const selected = entry.runs.find((r) => r.counter === entry.selected);
   // Trust either source: the dashboard payload knows a pipeline is running even
   // in the moment before its history page catches up, and without this a run
   // that looked idle would never be polled again to find out otherwise.
-  const dashboardSaysBusy = isActive(pipelineStatus(pipelineByName(state.route.name)));
+  const dashboardSaysBusy = isActive(
+    pipelineStatus(pipelineByName(state.route.name)),
+  );
   const historySaysBusy = selected && isActive(runStatus(selected));
   const busy = dashboardSaysBusy || historySaysBusy;
   // Only re-fetch when something is actually moving, or the first page is old.
@@ -380,34 +468,55 @@ function runPanel(name, run) {
   const status = runStatus(run);
 
   const head = el(
-    'div',
-    { class: 'panel-head' },
-    icon('layers', { size: 13 }),
+    "div",
+    { class: "panel-head" },
+    icon("layers", { size: 13 }),
     `Run #${run.counter}`,
-    el('span', { class: 'spacer' }),
+    el("span", { class: "spacer" }),
     statusPill(status),
-    el('button', { class: 'icon-btn', title: 'Open this run in the GoCD web UI', onclick: () => openInGoCd('run', { pipeline: name, counter: run.counter }) }, icon('external')),
-  );
-
-  const meta = el(
-    'div',
-    { class: 'material' },
-    icon('clock'),
     el(
-      'div',
-      { class: 'material-body' },
-      el('div', { class: 'material-title', text: run.label || `Run ${run.counter}` }),
-      el('div', { class: 'material-msg faint', text: [absoluteTime(run.scheduled_date), run.build_cause?.trigger_message].filter(Boolean).join(' - ') }),
+      "button",
+      {
+        class: "icon-btn",
+        title: "Open this run in the GoCD web UI",
+        onclick: () =>
+          openInGoCd("run", { pipeline: name, counter: run.counter }),
+      },
+      icon("external"),
     ),
   );
 
-  const stages = el('div', { class: 'stage-list' });
-  for (const stage of run.stages || []) stages.append(stageCard(name, run, stage));
+  const meta = el(
+    "div",
+    { class: "material" },
+    icon("clock"),
+    el(
+      "div",
+      { class: "material-body" },
+      el("div", {
+        class: "material-title",
+        text: run.label || `Run ${run.counter}`,
+      }),
+      el("div", {
+        class: "material-msg faint",
+        text: [
+          absoluteTime(run.scheduled_date),
+          run.build_cause?.trigger_message,
+        ]
+          .filter(Boolean)
+          .join(" - "),
+      }),
+    ),
+  );
+
+  const stages = el("div", { class: "stage-list" });
+  for (const stage of run.stages || [])
+    stages.append(stageCard(name, run, stage));
 
   return el(
-    'div',
+    "div",
     {},
-    el('div', { class: 'panel' }, head, meta, stages),
+    el("div", { class: "panel" }, head, meta, stages),
     materialsPanel(name, run),
   );
 }
@@ -419,21 +528,26 @@ function stageCard(pipeline, run, stage) {
   const older = showing !== latest;
   // The run payload describes the latest attempt only, so an older one has to
   // be fetched. Asking for it is what puts it in the cache.
-  const fetched = older ? attemptFor(pipeline, run.counter, stage.name, showing) : null;
+  const fetched = older
+    ? attemptFor(pipeline, run.counter, stage.name, showing)
+    : null;
   const shown = older ? fetched.stage : stage;
 
   const status = stageStatus(shown);
   const stageCounter = String(showing);
-  const manualPending = !older && stage.approval_type === 'manual' && status === 'Unknown';
+  const manualPending =
+    !older && stage.approval_type === "manual" && status === "Unknown";
   const runnable = (shown?.jobs || []).filter((job) => job?.name);
 
   // A stage with one job has nothing to choose between, and a stage that has not
   // run or is still running cannot be re-run at all.
-  const picking = !older && !isActive(status) && status !== 'Unknown' && runnable.length > 1;
+  const picking =
+    !older && !isActive(status) && status !== "Unknown" && runnable.length > 1;
 
   /** Job name -> its checkbox, so the button can read the selection. */
   const boxes = new Map();
-  const chosen = () => [...boxes].filter(([, box]) => box.checked).map(([name]) => name);
+  const chosen = () =>
+    [...boxes].filter(([, box]) => box.checked).map(([name]) => name);
 
   const key = selectionKey(pipeline, run.counter, stage.name, stageCounter);
   const names = runnable.map((job) => job.name);
@@ -442,7 +556,11 @@ function stageCard(pipeline, run, stage) {
     ? // Jobs can come and go between polls; keep only what still exists.
       new Set([...remembered].filter((name) => names.includes(name)))
     : // First sight of this attempt: what failed is what you usually want again.
-      new Set(runnable.filter((job) => jobStatus(job) === 'Failed').map((job) => job.name));
+      new Set(
+        runnable
+          .filter((job) => jobStatus(job) === "Failed")
+          .map((job) => job.name),
+      );
   selections.set(key, ticked);
 
   /** The store is the truth a repaint reads back; the checkboxes are just a view of it. */
@@ -451,7 +569,7 @@ function stageCard(pipeline, run, stage) {
     syncRerun();
   };
 
-  const rerunText = el('span', { text: 'Re-run' });
+  const rerunText = el("span", { text: "Re-run" });
   let selectAll = null;
 
   /**
@@ -462,18 +580,18 @@ function stageCard(pipeline, run, stage) {
   function syncRerun() {
     const count = chosen().length;
     const whole = count === 0 || count === boxes.size;
-    rerunText.textContent = whole ? 'Re-run' : `Re-run selected (${count})`;
+    rerunText.textContent = whole ? "Re-run" : `Re-run selected (${count})`;
     if (selectAll) {
       selectAll.checked = count === boxes.size && count > 0;
       selectAll.indeterminate = count > 0 && count < boxes.size;
     }
   }
 
-  const actions = el('div', { class: 'stage-actions' });
+  const actions = el("div", { class: "stage-actions" });
 
   if (picking) {
-    selectAll = el('input', {
-      type: 'checkbox',
+    selectAll = el("input", {
+      type: "checkbox",
       onchange: () => {
         for (const box of boxes.values()) box.checked = selectAll.checked;
         commit();
@@ -481,8 +599,11 @@ function stageCard(pipeline, run, stage) {
     });
     actions.append(
       el(
-        'label',
-        { class: 'job-check', title: 'Select or clear every job in this stage' },
+        "label",
+        {
+          class: "job-check",
+          title: "Select or clear every job in this stage",
+        },
         selectAll,
       ),
     );
@@ -492,17 +613,32 @@ function stageCard(pipeline, run, stage) {
   // one -- both of these would act on a stage that is not the one being read.
   if (!older && isActive(status)) {
     actions.append(
-      el('button', { class: 'btn btn-sm', title: 'Cancel this running stage', onclick: () => cancelStage({ pipeline, counter: run.counter, stage: stage.name, stageCounter }) }, icon('stop', { size: 12 }), 'Stop'),
+      el(
+        "button",
+        {
+          class: "btn btn-sm",
+          title: "Cancel this running stage",
+          onclick: () =>
+            cancelStage({
+              pipeline,
+              counter: run.counter,
+              stage: stage.name,
+              stageCounter,
+            }),
+        },
+        icon("stop", { size: 12 }),
+        "Stop",
+      ),
     );
-  } else if (!older && status !== 'Unknown') {
+  } else if (!older && status !== "Unknown") {
     actions.append(
       el(
-        'button',
+        "button",
         {
-          class: 'btn btn-sm',
+          class: "btn btn-sm",
           title: picking
-            ? 'Run the ticked jobs again, or the whole stage when none are ticked'
-            : 'Run this stage again',
+            ? "Run the ticked jobs again, or the whole stage when none are ticked"
+            : "Run this stage again",
           onclick: () =>
             rerunStage({
               pipeline,
@@ -513,26 +649,47 @@ function stageCard(pipeline, run, stage) {
               selected: picking ? chosen() : null,
             }),
         },
-        icon('rerun', { size: 12 }),
+        icon("rerun", { size: 12 }),
         rerunText,
       ),
     );
   }
 
   actions.append(
-    el('button', { class: 'icon-btn', title: 'Open this stage in the GoCD web UI', onclick: () => openInGoCd('stage', { pipeline, counter: run.counter, stage: stage.name, stageCounter }) }, icon('external')),
+    el(
+      "button",
+      {
+        class: "icon-btn",
+        title: "Open this stage in the GoCD web UI",
+        onclick: () =>
+          openInGoCd("stage", {
+            pipeline,
+            counter: run.counter,
+            stage: stage.name,
+            stageCounter,
+          }),
+      },
+      icon("external"),
+    ),
   );
 
-  const jobs = el('div', { class: 'job-list' });
-  if (fetched?.loading) jobs.append(el('div', { class: 'job-row faint', text: `Loading attempt ${showing}...` }));
-  else if (fetched?.error) jobs.append(el('div', { class: 'job-row faint', text: fetched.error }));
+  const jobs = el("div", { class: "job-list" });
+  if (fetched?.loading)
+    jobs.append(
+      el("div", {
+        class: "job-row faint",
+        text: `Loading attempt ${showing}...`,
+      }),
+    );
+  else if (fetched?.error)
+    jobs.append(el("div", { class: "job-row faint", text: fetched.error }));
 
   for (const job of shown?.jobs || []) {
     const jobState = jobStatus(job);
     const open = el(
-      'button',
+      "button",
       {
-        class: 'job-open',
+        class: "job-open",
         onclick: () =>
           openJobViewer({
             pipeline,
@@ -543,26 +700,37 @@ function stageCard(pipeline, run, stage) {
             live: isActive(status),
           }),
       },
-      icon('terminal', { size: 13 }),
-      el('span', { class: 'job-name truncate', text: job.name }),
+      icon("terminal", { size: 13 }),
+      el("span", { class: "job-name truncate", text: job.name }),
       statusPill(jobState),
-      icon('chevron-right', { size: 13 }),
+      icon("chevron-right", { size: 13 }),
     );
 
     if (!picking || !job.name) {
-      jobs.append(el('div', { class: 'job-row' }, open));
+      jobs.append(el("div", { class: "job-row" }, open));
       continue;
     }
 
     // Failed jobs arrive ticked: retrying what broke is the common case, and a
     // picker that starts empty would cost a click per job to get back here.
-    const box = el('input', { type: 'checkbox', checked: ticked.has(job.name), onchange: commit });
+    const box = el("input", {
+      type: "checkbox",
+      checked: ticked.has(job.name),
+      onchange: commit,
+    });
     boxes.set(job.name, box);
     jobs.append(
       el(
-        'div',
-        { class: 'job-row' },
-        el('label', { class: 'job-check', title: `Include ${job.name} in the next re-run` }, box),
+        "div",
+        { class: "job-row" },
+        el(
+          "label",
+          {
+            class: "job-check",
+            title: `Include ${job.name} in the next re-run`,
+          },
+          box,
+        ),
         open,
       ),
     );
@@ -571,18 +739,24 @@ function stageCard(pipeline, run, stage) {
   syncRerun();
 
   return el(
-    'div',
-    { class: 'stage-card' },
+    "div",
+    { class: "stage-card" },
     el(
-      'div',
-      { class: 'stage-head' },
-      el('span', { class: 'stage-name', text: stage.name }),
+      "div",
+      { class: "stage-head" },
+      el("span", { class: "stage-name", text: stage.name }),
       // An attempt still in flight has no status to report, and `stageStatus`
       // reads that absence as "Never run" -- which is a lie about a stage that
       // finished hours ago.
       !fetched?.loading && statusPill(status),
       latest > 1 && attemptPicker(attemptsKey, latest, showing),
-      manualPending && el('span', { class: 'manual-gate' }, icon('lock', { size: 12 }), 'Waiting for approval'),
+      manualPending &&
+        el(
+          "span",
+          { class: "manual-gate" },
+          icon("lock", { size: 12 }),
+          "Waiting for approval",
+        ),
       actions,
     ),
     jobs,
@@ -595,9 +769,9 @@ function stageCard(pipeline, run, stage) {
  * product can reach them.
  */
 function attemptPicker(key, latest, showing) {
-  const select = el('select', {
-    class: 'attempt-picker',
-    title: 'This stage ran more than once. Pick which attempt to show.',
+  const select = el("select", {
+    class: "attempt-picker",
+    title: "This stage ran more than once. Pick which attempt to show.",
     onchange: () => {
       const picked = Number(select.value);
       // Only an older attempt is remembered; the latest is the default, and
@@ -610,7 +784,7 @@ function attemptPicker(key, latest, showing) {
 
   for (let n = latest; n >= 1; n -= 1) {
     select.append(
-      el('option', {
+      el("option", {
         value: String(n),
         text: n === latest ? `Attempt ${n} (latest)` : `Attempt ${n}`,
         selected: n === showing,
@@ -633,7 +807,7 @@ function attemptFor(pipeline, counter, stage, stageCounter) {
 
   const entry = { loading: true, stage: null, error: null };
   attemptCache.set(key, entry);
-  send('stageInstance', { pipeline, counter, stage, stageCounter })
+  send("stageInstance", { pipeline, counter, stage, stageCounter })
     .then((data) => {
       entry.stage = data;
     })
@@ -653,39 +827,67 @@ function attemptFor(pipeline, counter, stage, stageCounter) {
 function materialsPanel(name, run) {
   const refs = gitRefs(run);
   const deps = upstreamDeps(run);
-  if (refs.length === 0 && deps.length === 0) return el('span');
+  if (refs.length === 0 && deps.length === 0) return el("span");
 
   const panel = el(
-    'div',
-    { class: 'panel', style: { marginTop: '12px' } },
-    el('div', { class: 'panel-head' }, icon('commit', { size: 13 }), 'What this run was built from'),
+    "div",
+    { class: "panel", style: { marginTop: "12px" } },
+    el(
+      "div",
+      { class: "panel-head" },
+      icon("commit", { size: 13 }),
+      "What this run was built from",
+    ),
   );
 
   for (const ref of refs) {
     const short = ref.sha.slice(0, 8);
-    const message = (ref.modification?.comment || '').trim();
+    const message = (ref.modification?.comment || "").trim();
 
     panel.append(
       el(
-        'div',
-        { class: 'material' },
-        icon('git-branch'),
+        "div",
+        { class: "material" },
+        icon("git-branch"),
         el(
-          'div',
-          { class: 'material-body' },
+          "div",
+          { class: "material-body" },
           el(
-            'div',
-            { class: 'row' },
-            el('span', { class: 'material-title truncate', text: `${ref.owner}/${ref.repo}` }),
-            el('span', { class: 'faint', text: ref.branch }),
+            "div",
+            { class: "row" },
+            el("span", {
+              class: "material-title truncate",
+              text: `${ref.owner}/${ref.repo}`,
+            }),
+            el("span", { class: "faint", text: ref.branch }),
           ),
-          message && el('div', { class: 'material-msg', text: message }),
+          message && el("div", { class: "material-msg", text: message }),
           el(
-            'div',
-            { class: 'row', style: { marginTop: '6px' } },
-            el('button', { class: 'sha', title: 'Copy the full commit SHA', onclick: () => copyToClipboard(ref.sha) }, short),
-            ref.modification?.user_name && el('span', { class: 'faint', text: ref.modification.user_name.replace(/\s*<[^>]*>\s*$/, '') }),
-            el('button', { class: 'btn btn-sm btn-ghost', onclick: () => chrome.tabs.create({ url: commitUrl(ref) }) }, icon('external', { size: 12 }), 'View commit'),
+            "div",
+            { class: "row", style: { marginTop: "6px" } },
+            el(
+              "button",
+              {
+                class: "sha",
+                title: "Copy the full commit SHA",
+                onclick: () => copyToClipboard(ref.sha),
+              },
+              short,
+            ),
+            ref.modification?.user_name &&
+              el("span", {
+                class: "faint",
+                text: ref.modification.user_name.replace(/\s*<[^>]*>\s*$/, ""),
+              }),
+            el(
+              "button",
+              {
+                class: "btn btn-sm btn-ghost",
+                onclick: () => chrome.tabs.create({ url: commitUrl(ref) }),
+              },
+              icon("external", { size: 12 }),
+              "View commit",
+            ),
           ),
         ),
       ),
@@ -695,17 +897,20 @@ function materialsPanel(name, run) {
   for (const dep of deps) {
     panel.append(
       el(
-        'div',
-        { class: 'material' },
-        icon('layers'),
+        "div",
+        { class: "material" },
+        icon("layers"),
         el(
-          'div',
-          { class: 'material-body' },
-          el('div', { class: 'material-title', text: `Triggered by ${dep.name} #${dep.counter}` }),
-          el('button', {
-            class: 'btn btn-sm btn-ghost',
-            text: 'Open that pipeline',
-            onclick: () => navigate({ kind: 'pipeline', name: dep.name }),
+          "div",
+          { class: "material-body" },
+          el("div", {
+            class: "material-title",
+            text: `Triggered by ${dep.name} #${dep.counter}`,
+          }),
+          el("button", {
+            class: "btn btn-sm btn-ghost",
+            text: "Open that pipeline",
+            onclick: () => navigate({ kind: "pipeline", name: dep.name }),
           }),
         ),
       ),

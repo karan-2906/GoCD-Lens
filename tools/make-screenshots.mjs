@@ -25,21 +25,21 @@
  * relative path shows itself.
  */
 
-import { createServer } from 'node:http';
-import { spawn } from 'node:child_process';
-import { readFile, mkdir, rm, stat } from 'node:fs/promises';
-import { join, extname, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { tmpdir } from 'node:os';
+import { createServer } from "node:http";
+import { spawn } from "node:child_process";
+import { readFile, mkdir, rm, stat } from "node:fs/promises";
+import { join, extname, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { tmpdir } from "node:os";
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const SHOTS_DIR = join(ROOT, 'docs', 'screenshots');
-const STORE_DIR = join(ROOT, 'docs', 'store');
-const SITE_DIR = join(ROOT, 'site', 'img');
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+const SHOTS_DIR = join(ROOT, "docs", "screenshots");
+const STORE_DIR = join(ROOT, "docs", "store");
+const SITE_DIR = join(ROOT, "site", "img");
 
 const CHROME =
   process.env.CHROME_PATH ||
-  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 
 // ------------------------------------------------------------------ fixture
 
@@ -52,41 +52,174 @@ const ago = (minutes) => now - minutes * 60_000;
  * named so the README's fuzzy-search example (`wabp`) actually matches.
  */
 const WORLD = [
-  ['web', 'web-app-build-prod', [['build', 'Passed'], ['test', 'Passed'], ['deploy-prod', 'Passed']], { minutes: 6 }],
-  ['web', 'web-app-build-staging', [['build', 'Passed'], ['test', 'Building'], ['deploy-staging', 'Unknown']], { minutes: 1 }],
-  ['web', 'web-marketing-site', [['build', 'Passed'], ['publish', 'Passed']], { minutes: 52 }],
-  ['web', 'web-design-system', [['build', 'Failed'], ['test', 'Unknown']], { minutes: 18 }],
+  [
+    "web",
+    "web-app-build-prod",
+    [
+      ["build", "Passed"],
+      ["test", "Passed"],
+      ["deploy-prod", "Passed"],
+    ],
+    { minutes: 6 },
+  ],
+  [
+    "web",
+    "web-app-build-staging",
+    [
+      ["build", "Passed"],
+      ["test", "Building"],
+      ["deploy-staging", "Unknown"],
+    ],
+    { minutes: 1 },
+  ],
+  [
+    "web",
+    "web-marketing-site",
+    [
+      ["build", "Passed"],
+      ["publish", "Passed"],
+    ],
+    { minutes: 52 },
+  ],
+  [
+    "web",
+    "web-design-system",
+    [
+      ["build", "Failed"],
+      ["test", "Unknown"],
+    ],
+    { minutes: 18 },
+  ],
 
-  ['checkout', 'checkout-service', [['build', 'Passed'], ['integration', 'Failed'], ['deploy', 'Unknown']], { minutes: 12 }],
-  ['checkout', 'checkout-e2e', [['build', 'Passed'], ['e2e', 'Building']], { minutes: 2 }],
-  ['checkout', 'checkout-contract-tests', [['build', 'Passed'], ['verify', 'Passed']], { minutes: 96 }],
+  [
+    "checkout",
+    "checkout-service",
+    [
+      ["build", "Passed"],
+      ["integration", "Failed"],
+      ["deploy", "Unknown"],
+    ],
+    { minutes: 12 },
+  ],
+  [
+    "checkout",
+    "checkout-e2e",
+    [
+      ["build", "Passed"],
+      ["e2e", "Building"],
+    ],
+    { minutes: 2 },
+  ],
+  [
+    "checkout",
+    "checkout-contract-tests",
+    [
+      ["build", "Passed"],
+      ["verify", "Passed"],
+    ],
+    { minutes: 96 },
+  ],
 
-  ['payments', 'payments-api', [['build', 'Passed'], ['test', 'Passed'], ['deploy-prod', 'Passed']], { minutes: 34 }],
-  ['payments', 'payments-ledger', [['build', 'Passed'], ['test', 'Passed'], ['approve', 'Unknown']], { minutes: 41, gate: true }],
-  ['payments', 'payments-reconciler', [['build', 'Cancelled']], { minutes: 140 }],
+  [
+    "payments",
+    "payments-api",
+    [
+      ["build", "Passed"],
+      ["test", "Passed"],
+      ["deploy-prod", "Passed"],
+    ],
+    { minutes: 34 },
+  ],
+  [
+    "payments",
+    "payments-ledger",
+    [
+      ["build", "Passed"],
+      ["test", "Passed"],
+      ["approve", "Unknown"],
+    ],
+    { minutes: 41, gate: true },
+  ],
+  [
+    "payments",
+    "payments-reconciler",
+    [["build", "Cancelled"]],
+    { minutes: 140 },
+  ],
 
-  ['platform', 'platform-auth', [['build', 'Passed'], ['test', 'Passed']], { minutes: 73 }],
-  ['platform', 'platform-search-index', [['build', 'Failed']], { minutes: 25 }],
-  ['platform', 'platform-notifications', [['build', 'Passed'], ['deploy', 'Passed']], { minutes: 210 }],
-  ['platform', 'platform-legacy-sync', [], { minutes: 0, paused: 'Owner left the team; keeping it off until someone adopts it' }],
+  [
+    "platform",
+    "platform-auth",
+    [
+      ["build", "Passed"],
+      ["test", "Passed"],
+    ],
+    { minutes: 73 },
+  ],
+  ["platform", "platform-search-index", [["build", "Failed"]], { minutes: 25 }],
+  [
+    "platform",
+    "platform-notifications",
+    [
+      ["build", "Passed"],
+      ["deploy", "Passed"],
+    ],
+    { minutes: 210 },
+  ],
+  [
+    "platform",
+    "platform-legacy-sync",
+    [],
+    {
+      minutes: 0,
+      paused: "Owner left the team; keeping it off until someone adopts it",
+    },
+  ],
 
-  ['infrastructure', 'infra-terraform-plan', [['plan', 'Passed'], ['apply', 'Unknown']], { minutes: 15, gate: true }],
-  ['infrastructure', 'infra-base-images', [['build', 'Building']], { minutes: 3 }],
-  ['infrastructure', 'infra-cost-report', [['collect', 'Passed'], ['publish', 'Passed']], { minutes: 380 }],
+  [
+    "infrastructure",
+    "infra-terraform-plan",
+    [
+      ["plan", "Passed"],
+      ["apply", "Unknown"],
+    ],
+    { minutes: 15, gate: true },
+  ],
+  [
+    "infrastructure",
+    "infra-base-images",
+    [["build", "Building"]],
+    { minutes: 3 },
+  ],
+  [
+    "infrastructure",
+    "infra-cost-report",
+    [
+      ["collect", "Passed"],
+      ["publish", "Passed"],
+    ],
+    { minutes: 380 },
+  ],
 ];
 
-const GROUP_ORDER = ['web', 'checkout', 'payments', 'platform', 'infrastructure'];
+const GROUP_ORDER = [
+  "web",
+  "checkout",
+  "payments",
+  "platform",
+  "infrastructure",
+];
 
 const COUNTERS = {
-  'web-app-build-prod': 4127,
-  'web-app-build-staging': 8814,
-  'checkout-service': 2390,
-  'checkout-e2e': 1188,
-  'payments-api': 940,
-  'payments-ledger': 512,
-  'platform-auth': 6602,
-  'platform-search-index': 77,
-  'web-design-system': 431,
+  "web-app-build-prod": 4127,
+  "web-app-build-staging": 8814,
+  "checkout-service": 2390,
+  "checkout-e2e": 1188,
+  "payments-api": 940,
+  "payments-ledger": 512,
+  "platform-auth": 6602,
+  "platform-search-index": 77,
+  "web-design-system": 431,
 };
 
 const counterFor = (name) => COUNTERS[name] ?? 316;
@@ -97,7 +230,7 @@ function pipelineObject([group, name, stages, opts]) {
     name,
     _group: group,
     pause_info: paused
-      ? { paused: true, paused_by: 'priya', pause_reason: opts.paused }
+      ? { paused: true, paused_by: "priya", pause_reason: opts.paused }
       : { paused: false },
     _embedded: {
       instances: stages.length
@@ -111,7 +244,8 @@ function pipelineObject([group, name, stages, opts]) {
                   name: stageName,
                   status,
                   counter: 1,
-                  approval_type: opts.gate && i === stages.length - 1 ? 'manual' : 'success',
+                  approval_type:
+                    opts.gate && i === stages.length - 1 ? "manual" : "success",
                 })),
               },
             },
@@ -131,23 +265,26 @@ const CACHE = {
   groups: GROUPS,
   pipelines: PIPELINES,
   etag: '"demo"',
-  view: 'Team view',
+  view: "Team view",
   fetchedAt: ago(0.2),
 };
 
 const VIEWS = [
-  { name: 'Team view', pipelines: WORLD.map(([, p]) => p) },
-  { name: 'Release train', pipelines: ['web-app-build-prod', 'payments-api', 'platform-auth'] },
-  { name: 'Everything I own', pipelines: WORLD.map(([, p]) => p) },
+  { name: "Team view", pipelines: WORLD.map(([, p]) => p) },
+  {
+    name: "Release train",
+    pipelines: ["web-app-build-prod", "payments-api", "platform-auth"],
+  },
+  { name: "Everything I own", pipelines: WORLD.map(([, p]) => p) },
 ];
 
-const FAVORITES = ['checkout-service', 'web-app-build-prod', 'payments-api'];
-const WATCHED = ['checkout-service', 'web-app-build-staging'];
+const FAVORITES = ["checkout-service", "web-app-build-prod", "payments-api"];
+const WATCHED = ["checkout-service", "web-app-build-staging"];
 
 const STATE = {
   connection: {
-    serverUrl: 'https://gocd.internal.example.com/go',
-    authMode: 'session',
+    serverUrl: "https://gocd.internal.example.com/go",
+    authMode: "session",
     hasSecret: false,
     secretHint: null,
   },
@@ -156,18 +293,18 @@ const STATE = {
     pollSeconds: 10,
     notifyWhenClosed: true,
     backgroundMinutes: 5,
-    activeView: 'Team view',
+    activeView: "Team view",
     notifications: true,
     notifyStarred: true,
-    badgeSource: 'watched',
+    badgeSource: "watched",
     sound: true,
-    theme: 'light',
-    density: 'comfortable',
+    theme: "light",
+    density: "comfortable",
   },
   favorites: FAVORITES,
   watched: WATCHED,
   cache: CACHE,
-  recent: ['checkout-service', 'web-app-build-prod'],
+  recent: ["checkout-service", "web-app-build-prod"],
   expandedGroups: GROUP_ORDER,
   views: VIEWS,
 };
@@ -176,18 +313,69 @@ const STATE = {
 function historyRuns(pipeline) {
   const base = counterFor(pipeline);
   const shapes = [
-    { stages: [['build', 'Passed'], ['integration', 'Failed'], ['deploy', 'Unknown']], minutes: 12 },
-    { stages: [['build', 'Passed'], ['integration', 'Passed'], ['deploy', 'Passed']], minutes: 88 },
-    { stages: [['build', 'Passed'], ['integration', 'Passed'], ['deploy', 'Passed']], minutes: 171 },
-    { stages: [['build', 'Passed'], ['integration', 'Cancelled'], ['deploy', 'Unknown']], minutes: 254 },
-    { stages: [['build', 'Failed'], ['integration', 'Unknown'], ['deploy', 'Unknown']], minutes: 330 },
+    {
+      stages: [
+        ["build", "Passed"],
+        ["integration", "Failed"],
+        ["deploy", "Unknown"],
+      ],
+      minutes: 12,
+    },
+    {
+      stages: [
+        ["build", "Passed"],
+        ["integration", "Passed"],
+        ["deploy", "Passed"],
+      ],
+      minutes: 88,
+    },
+    {
+      stages: [
+        ["build", "Passed"],
+        ["integration", "Passed"],
+        ["deploy", "Passed"],
+      ],
+      minutes: 171,
+    },
+    {
+      stages: [
+        ["build", "Passed"],
+        ["integration", "Cancelled"],
+        ["deploy", "Unknown"],
+      ],
+      minutes: 254,
+    },
+    {
+      stages: [
+        ["build", "Failed"],
+        ["integration", "Unknown"],
+        ["deploy", "Unknown"],
+      ],
+      minutes: 330,
+    },
   ];
   const messages = [
-    ['a4f19c2d3b7e5081', 'Reject expired discount codes at capture time', 'Priya Nair'],
-    ['b81d0e7a44c9f312', 'Bump checkout-sdk to 4.2.0', 'Tom Alvarez'],
-    ['c02e5518f9a7d446', 'Retry the payment gateway once on a 502', 'Priya Nair'],
-    ['d7391aa0c5e2b688', 'Log the correlation id on every capture attempt', 'Sam Oduya'],
-    ['e5c48b2213f0a970', 'Split the integration stage into two jobs', 'Tom Alvarez'],
+    [
+      "a4f19c2d3b7e5081",
+      "Reject expired discount codes at capture time",
+      "Priya Nair",
+    ],
+    ["b81d0e7a44c9f312", "Bump checkout-sdk to 4.2.0", "Tom Alvarez"],
+    [
+      "c02e5518f9a7d446",
+      "Retry the payment gateway once on a 502",
+      "Priya Nair",
+    ],
+    [
+      "d7391aa0c5e2b688",
+      "Log the correlation id on every capture attempt",
+      "Sam Oduya",
+    ],
+    [
+      "e5c48b2213f0a970",
+      "Split the integration stage into two jobs",
+      "Tom Alvarez",
+    ],
   ];
   return shapes.map((shape, i) => ({
     counter: base - i,
@@ -199,24 +387,46 @@ function historyRuns(pipeline) {
       result: status,
       // The newest run's failed stage was re-run, which is what puts an attempt
       // picker on its card -- the one path that reaches an earlier attempt.
-      counter: name === 'integration' && i === 0 ? 3 : 1,
-      approval_type: si === 2 ? 'manual' : 'success',
+      counter: name === "integration" && i === 0 ? 3 : 1,
+      approval_type: si === 2 ? "manual" : "success",
       jobs:
-        name === 'integration'
+        name === "integration"
           ? [
-              { name: 'api-tests', state: 'Completed', result: status === 'Failed' ? 'Failed' : status },
-              { name: 'browser-tests-1', state: 'Completed', result: status === 'Failed' ? 'Failed' : status },
-              { name: 'browser-tests-2', state: 'Completed', result: status === 'Unknown' ? 'Unknown' : 'Passed' },
-              { name: 'browser-tests-3', state: 'Completed', result: status === 'Unknown' ? 'Unknown' : 'Passed' },
+              {
+                name: "api-tests",
+                state: "Completed",
+                result: status === "Failed" ? "Failed" : status,
+              },
+              {
+                name: "browser-tests-1",
+                state: "Completed",
+                result: status === "Failed" ? "Failed" : status,
+              },
+              {
+                name: "browser-tests-2",
+                state: "Completed",
+                result: status === "Unknown" ? "Unknown" : "Passed",
+              },
+              {
+                name: "browser-tests-3",
+                state: "Completed",
+                result: status === "Unknown" ? "Unknown" : "Passed",
+              },
             ]
-          : [{ name: name === 'build' ? 'compile' : 'ship', state: 'Completed', result: status }],
+          : [
+              {
+                name: name === "build" ? "compile" : "ship",
+                state: "Completed",
+                result: status,
+              },
+            ],
     })),
     build_cause: {
-      trigger_message: 'modified by Priya Nair',
+      trigger_message: "modified by Priya Nair",
       material_revisions: [
         {
           material: {
-            type: 'Git',
+            type: "Git",
             description: `URL: https://github.com/example-org/${pipeline}.git, Branch: main`,
           },
           modifications: [
@@ -229,8 +439,13 @@ function historyRuns(pipeline) {
           ],
         },
         {
-          material: { type: 'Pipeline', description: 'platform-auth' },
-          modifications: [{ revision: 'platform-auth/6602/build/1', modified_time: ago(shape.minutes + 30) }],
+          material: { type: "Pipeline", description: "platform-auth" },
+          modifications: [
+            {
+              revision: "platform-auth/6602/build/1",
+              modified_time: ago(shape.minutes + 30),
+            },
+          ],
         },
       ],
     },
@@ -238,52 +453,62 @@ function historyRuns(pipeline) {
 }
 
 const LOG = [
-  'go|00:00:00.004 Start to prepare checkout-service/2390/integration/1/api-tests on agent-linux-07',
-  'go|00:00:00.121 Start to update materials',
-  'ex|00:00:01.884 Cloning into /var/lib/go-agent/pipelines/checkout-service...',
-  'ex|00:00:04.210 HEAD is now at a4f19c2 Reject expired discount codes at capture time',
-  'go|00:00:04.288 Start to build',
-  'ex|00:00:04.901 > npm ci --prefer-offline',
-  'ex|00:00:21.336 added 1284 packages in 16s',
-  'ex|00:00:21.400 > npm run test:integration',
-  'ex|00:00:23.019 ',
-  'ex|00:00:23.020   checkout / capture',
-  'ex|00:00:24.551     ✓ captures a valid card (412ms)',
-  'ex|00:00:25.118     ✓ declines an expired card (287ms)',
-  'ex|00:00:26.774     ✓ retries once on a gateway 502 (1.2s)',
-  'ex|00:00:27.005 ',
-  'ex|00:00:27.006   checkout / discounts',
-  'ex|00:00:28.442     ✓ applies a percentage discount (338ms)',
-  'ex|00:00:30.910     1) rejects an expired discount code',
-  'ex|00:00:31.002 ',
-  'ex|00:00:31.118   4 passing (8s)',
-  'ex|00:00:31.119   1 failing',
-  'ex|00:00:31.201 ',
-  'ex|00:00:31.202   1) checkout / discounts rejects an expired discount code:',
-  'ex|00:00:31.203      AssertionError: expected 200 to equal 422',
-  'ex|00:00:31.204       + expected - actual',
-  'ex|00:00:31.205       -200',
-  'ex|00:00:31.206       +422',
-  'ex|00:00:31.290       at Context.<anonymous> (test/discounts.spec.js:118:31)',
-  'ex|00:00:31.404       at processTicksAndRejections (node:internal/process/task_queues:95:5)',
-  'ex|00:00:31.560 ',
-  'ex|00:00:31.771 WARNING: 3 deprecated APIs were called during this run',
-  'ex|00:00:32.004 npm ERR! Lifecycle script `test:integration` failed with error 1',
-  'go|00:00:32.118 Uploading artifacts from /reports/junit.xml',
-  'go|00:00:32.660 [go] Job completed with result Failed',
-].join('\n');
+  "go|00:00:00.004 Start to prepare checkout-service/2390/integration/1/api-tests on agent-linux-07",
+  "go|00:00:00.121 Start to update materials",
+  "ex|00:00:01.884 Cloning into /var/lib/go-agent/pipelines/checkout-service...",
+  "ex|00:00:04.210 HEAD is now at a4f19c2 Reject expired discount codes at capture time",
+  "go|00:00:04.288 Start to build",
+  "ex|00:00:04.901 > npm ci --prefer-offline",
+  "ex|00:00:21.336 added 1284 packages in 16s",
+  "ex|00:00:21.400 > npm run test:integration",
+  "ex|00:00:23.019 ",
+  "ex|00:00:23.020   checkout / capture",
+  "ex|00:00:24.551     ✓ captures a valid card (412ms)",
+  "ex|00:00:25.118     ✓ declines an expired card (287ms)",
+  "ex|00:00:26.774     ✓ retries once on a gateway 502 (1.2s)",
+  "ex|00:00:27.005 ",
+  "ex|00:00:27.006   checkout / discounts",
+  "ex|00:00:28.442     ✓ applies a percentage discount (338ms)",
+  "ex|00:00:30.910     1) rejects an expired discount code",
+  "ex|00:00:31.002 ",
+  "ex|00:00:31.118   4 passing (8s)",
+  "ex|00:00:31.119   1 failing",
+  "ex|00:00:31.201 ",
+  "ex|00:00:31.202   1) checkout / discounts rejects an expired discount code:",
+  "ex|00:00:31.203      AssertionError: expected 200 to equal 422",
+  "ex|00:00:31.204       + expected - actual",
+  "ex|00:00:31.205       -200",
+  "ex|00:00:31.206       +422",
+  "ex|00:00:31.290       at Context.<anonymous> (test/discounts.spec.js:118:31)",
+  "ex|00:00:31.404       at processTicksAndRejections (node:internal/process/task_queues:95:5)",
+  "ex|00:00:31.560 ",
+  "ex|00:00:31.771 WARNING: 3 deprecated APIs were called during this run",
+  "ex|00:00:32.004 npm ERR! Lifecycle script `test:integration` failed with error 1",
+  "go|00:00:32.118 Uploading artifacts from /reports/junit.xml",
+  "go|00:00:32.660 [go] Job completed with result Failed",
+].join("\n");
 
 const ARTIFACTS = [
-  { name: 'reports', type: 'folder', files: [
-    { name: 'junit.xml', type: 'file', size: 48213, url: '#' },
-    { name: 'coverage.html', type: 'file', size: 291044, url: '#' },
-  ] },
-  { name: 'screenshots', type: 'folder', files: [
-    { name: 'discounts-failure.png', type: 'file', size: 184220, url: '#' },
-  ] },
-  { name: 'cruise-output', type: 'folder', files: [
-    { name: 'console.log', type: 'file', size: 19844, url: '#' },
-  ] },
+  {
+    name: "reports",
+    type: "folder",
+    files: [
+      { name: "junit.xml", type: "file", size: 48213, url: "#" },
+      { name: "coverage.html", type: "file", size: 291044, url: "#" },
+    ],
+  },
+  {
+    name: "screenshots",
+    type: "folder",
+    files: [
+      { name: "discounts-failure.png", type: "file", size: 184220, url: "#" },
+    ],
+  },
+  {
+    name: "cruise-output",
+    type: "folder",
+    files: [{ name: "console.log", type: "file", size: 19844, url: "#" }],
+  },
 ];
 
 /** Replies keyed by message type, exactly as the worker would answer. */
@@ -291,39 +516,80 @@ const REPLIES = {
   getState: STATE,
   refresh: CACHE,
   views: VIEWS,
-  history: { runs: historyRuns('checkout-service'), next: null },
-  instance: { counter: 2390, label: '2390', stages: historyRuns('checkout-service')[0].stages },
+  history: { runs: historyRuns("checkout-service"), next: null },
+  instance: {
+    counter: 2390,
+    label: "2390",
+    stages: historyRuns("checkout-service")[0].stages,
+  },
   // The run payload only carries a stage's latest attempt, so this is what an
   // earlier one is read from.
   stageInstance: {
-    name: 'integration',
+    name: "integration",
     counter: 1,
-    result: 'Failed',
+    result: "Failed",
     jobs: [
-      { name: 'api-tests', state: 'Completed', result: 'Failed' },
-      { name: 'browser-tests-1', state: 'Completed', result: 'Failed' },
-      { name: 'browser-tests-2', state: 'Completed', result: 'Passed' },
-      { name: 'browser-tests-3', state: 'Completed', result: 'Failed' },
+      { name: "api-tests", state: "Completed", result: "Failed" },
+      { name: "browser-tests-1", state: "Completed", result: "Failed" },
+      { name: "browser-tests-2", state: "Completed", result: "Passed" },
+      { name: "browser-tests-3", state: "Completed", result: "Failed" },
     ],
   },
   consoleLog: { text: LOG, complete: true, nextLine: 36 },
   artifacts: ARTIFACTS,
-  webUrl: 'https://gocd.internal.example.com/go/pipelines',
-  notificationStatus: { level: 'granted', canNotify: true },
+  webUrl: "https://gocd.internal.example.com/go/pipelines",
+  notificationStatus: { level: "granted", canNotify: true },
   toggleFavorite: FAVORITES,
   toggleWatched: WATCHED,
   setExpandedGroups: GROUP_ORDER,
   updateSettings: STATE.settings,
   diagnose: {
     probes: [
-      { id: 'permission', label: 'Browser permission for this origin', ok: true, summary: 'granted', ms: 0 },
-      { id: 'reachable', label: 'Server reachable', ok: true, summary: 'answered in 84ms', ms: 84 },
-      { id: 'version', label: 'GoCD API', ok: true, summary: 'GoCD 23.5.0', ms: 96 },
-      { id: 'identity', label: 'Who the server thinks you are', ok: true, summary: 'signed in as priya', ms: 71 },
-      { id: 'dashboard', label: 'Dashboard payload', ok: true, summary: '17 pipelines visible', ms: 212 },
-      { id: 'webui', label: 'GoCD web UI', ok: false, summary: 'timed out after 10s', ms: 10000 },
+      {
+        id: "permission",
+        label: "Browser permission for this origin",
+        ok: true,
+        summary: "granted",
+        ms: 0,
+      },
+      {
+        id: "reachable",
+        label: "Server reachable",
+        ok: true,
+        summary: "answered in 84ms",
+        ms: 84,
+      },
+      {
+        id: "version",
+        label: "GoCD API",
+        ok: true,
+        summary: "GoCD 23.5.0",
+        ms: 96,
+      },
+      {
+        id: "identity",
+        label: "Who the server thinks you are",
+        ok: true,
+        summary: "signed in as priya",
+        ms: 71,
+      },
+      {
+        id: "dashboard",
+        label: "Dashboard payload",
+        ok: true,
+        summary: "17 pipelines visible",
+        ms: 212,
+      },
+      {
+        id: "webui",
+        label: "GoCD web UI",
+        ok: false,
+        summary: "timed out after 10s",
+        ms: 10000,
+      },
     ],
-    verdict: 'The API is answering normally and the web UI is not. This is the situation GoCD Lens exists for.',
+    verdict:
+      "The API is answering normally and the web UI is not. This is the situation GoCD Lens exists for.",
   },
 };
 
@@ -343,7 +609,7 @@ function repliesFor(shot) {
  * chrome APIs a page touches. Everything above this line is data; everything
  * below the app is untouched product code.
  */
-function harness({ replies, driver = '' }) {
+function harness({ replies, driver = "" }) {
   return `
 (() => {
   const REPLIES = ${JSON.stringify(replies)};
@@ -437,19 +703,19 @@ function promoTile({ width, height, shot }) {
     background: radial-gradient(120% 140% at 0% 0%, #1b2330 0%, var(--bg) 55%);
     color: var(--text); font-family: var(--font);
     display: flex; align-items: center; gap: ${wide ? 56 : 0}px;
-    padding: ${wide ? '0 72px' : '0'};
-    ${wide ? '' : 'flex-direction: column; justify-content: center; text-align: center;'}
+    padding: ${wide ? "0 72px" : "0"};
+    ${wide ? "" : "flex-direction: column; justify-content: center; text-align: center;"}
   }
-  .words { flex: ${wide ? '0 0 460px' : 'none'}; }
-  .brand { display: flex; align-items: center; gap: 14px; ${wide ? '' : 'justify-content: center;'} }
+  .words { flex: ${wide ? "0 0 460px" : "none"}; }
+  .brand { display: flex; align-items: center; gap: 14px; ${wide ? "" : "justify-content: center;"} }
   .brand img { width: ${wide ? 56 : 44}px; height: ${wide ? 56 : 44}px; border-radius: 12px; }
   .brand h1 { font-size: ${wide ? 44 : 32}px; letter-spacing: -0.02em; font-weight: 700; }
   .tag {
     margin-top: ${wide ? 20 : 14}px; font-size: ${wide ? 21 : 15}px; line-height: 1.45;
-    color: var(--muted); max-width: ${wide ? 460 : 340}px; ${wide ? '' : 'margin-left: auto; margin-right: auto;'}
+    color: var(--muted); max-width: ${wide ? 460 : 340}px; ${wide ? "" : "margin-left: auto; margin-right: auto;"}
   }
   .tag b { color: var(--text); font-weight: 600; }
-  .strip { display: flex; gap: 6px; margin-top: ${wide ? 28 : 20}px; ${wide ? '' : 'justify-content: center;'} }
+  .strip { display: flex; gap: 6px; margin-top: ${wide ? 28 : 20}px; ${wide ? "" : "justify-content: center;"} }
   .seg { height: 6px; width: ${wide ? 64 : 44}px; border-radius: 3px; }
   .shot {
     flex: 1; height: ${height - 96}px; border-radius: 14px; overflow: hidden;
@@ -471,34 +737,59 @@ function promoTile({ width, height, shot }) {
       <div class="seg" style="background: var(--build)"></div>
     </div>
   </div>
-  ${shot ? `<div class="shot"><img src="/docs/screenshots/${shot}" alt=""></div>` : ''}
+  ${shot ? `<div class="shot"><img src="/docs/screenshots/${shot}" alt=""></div>` : ""}
 </body></html>`;
 }
 
 /** Store assets: exact pixel sizes, 1x, because the store rejects anything else. */
 const STORE = [
-  { name: 'store-dashboard', page: 'src/dashboard/dashboard.html', width: 1280, height: 800 },
   {
-    name: 'store-pipeline',
-    page: 'src/dashboard/dashboard.html',
+    name: "store-dashboard",
+    page: "src/dashboard/dashboard.html",
     width: 1280,
     height: 800,
-    driver: waitFor('.card-p', 'el.click();'),
   },
   {
-    name: 'store-console',
-    page: 'src/dashboard/dashboard.html',
+    name: "store-pipeline",
+    page: "src/dashboard/dashboard.html",
     width: 1280,
     height: 800,
-    driver: waitFor('.card-p', `
+    driver: waitFor(".card-p", "el.click();"),
+  },
+  {
+    name: "store-console",
+    page: "src/dashboard/dashboard.html",
+    width: 1280,
+    height: 800,
+    driver: waitFor(
+      ".card-p",
+      `
       el.click();
-      ${waitForText('.job-row', 'api-tests', "el.querySelector('.job-open').click();")}
-    `),
+      ${waitForText(".job-row", "api-tests", "el.querySelector('.job-open').click();")}
+    `,
+    ),
   },
-  { name: 'store-dark', page: 'src/dashboard/dashboard.html', width: 1280, height: 800, theme: 'dark' },
-  { name: 'store-settings', page: 'src/setup/setup.html', width: 1280, height: 800 },
-  { name: 'promo-small', promo: true, width: 440, height: 280 },
-  { name: 'promo-marquee', promo: true, width: 1400, height: 560, shot: 'dashboard-dark.png' },
+  {
+    name: "store-dark",
+    page: "src/dashboard/dashboard.html",
+    width: 1280,
+    height: 800,
+    theme: "dark",
+  },
+  {
+    name: "store-settings",
+    page: "src/setup/setup.html",
+    width: 1280,
+    height: 800,
+  },
+  { name: "promo-small", promo: true, width: 440, height: 280 },
+  {
+    name: "promo-marquee",
+    promo: true,
+    width: 1400,
+    height: 560,
+    shot: "dashboard-dark.png",
+  },
 ];
 
 /**
@@ -508,135 +799,172 @@ const STORE = [
  * use.
  */
 const SITE = [
-  { name: 'hero', page: 'src/dashboard/dashboard.html', width: 1280, height: 800, scale: 2 },
-  { name: 'dark', page: 'src/dashboard/dashboard.html', width: 1280, height: 800, theme: 'dark' },
   {
-    name: 'pipeline',
-    page: 'src/dashboard/dashboard.html',
+    name: "hero",
+    page: "src/dashboard/dashboard.html",
     width: 1280,
     height: 800,
-    driver: waitFor('.card-p', 'el.click();'),
+    scale: 2,
   },
   {
-    name: 'console',
-    page: 'src/dashboard/dashboard.html',
+    name: "dark",
+    page: "src/dashboard/dashboard.html",
     width: 1280,
     height: 800,
-    driver: waitFor('.card-p', `
+    theme: "dark",
+  },
+  {
+    name: "pipeline",
+    page: "src/dashboard/dashboard.html",
+    width: 1280,
+    height: 800,
+    driver: waitFor(".card-p", "el.click();"),
+  },
+  {
+    name: "console",
+    page: "src/dashboard/dashboard.html",
+    width: 1280,
+    height: 800,
+    driver: waitFor(
+      ".card-p",
+      `
       el.click();
-      ${waitForText('.job-row', 'api-tests', "el.querySelector('.job-open').click();")}
-    `),
+      ${waitForText(".job-row", "api-tests", "el.querySelector('.job-open').click();")}
+    `,
+    ),
   },
   {
-    name: 'search',
-    page: 'src/dashboard/dashboard.html',
+    name: "search",
+    page: "src/dashboard/dashboard.html",
     width: 1280,
     height: 800,
-    driver: waitFor('#search', `
+    driver: waitFor(
+      "#search",
+      `
       el.value = 'wabp';
       el.dispatchEvent(new Event('input', { bubbles: true }));
-    `),
+    `,
+    ),
   },
-  { name: 'popup', page: 'src/popup/popup.html', width: 400, height: 600, scale: 2 },
-  { name: 'og', promo: true, width: 1200, height: 630, shot: 'dashboard-dark.png' },
+  {
+    name: "popup",
+    page: "src/popup/popup.html",
+    width: 400,
+    height: 600,
+    scale: 2,
+  },
+  {
+    name: "og",
+    promo: true,
+    width: 1200,
+    height: 630,
+    shot: "dashboard-dark.png",
+  },
 ];
 
 const SHOTS = [
   {
-    name: 'dashboard',
-    page: 'src/dashboard/dashboard.html',
+    name: "dashboard",
+    page: "src/dashboard/dashboard.html",
     width: 1440,
     height: 900,
-    caption: 'The pipeline list',
+    caption: "The pipeline list",
   },
   {
-    name: 'dashboard-dark',
-    page: 'src/dashboard/dashboard.html',
+    name: "dashboard-dark",
+    page: "src/dashboard/dashboard.html",
     width: 1440,
     height: 900,
-    theme: 'dark',
-    caption: 'The same list in dark mode',
+    theme: "dark",
+    caption: "The same list in dark mode",
   },
   {
-    name: 'search',
-    page: 'src/dashboard/dashboard.html',
+    name: "search",
+    page: "src/dashboard/dashboard.html",
     width: 1440,
     height: 900,
-    caption: 'Fuzzy search: four letters find web-app-build-prod',
-    driver: waitFor('#search', `
+    caption: "Fuzzy search: four letters find web-app-build-prod",
+    driver: waitFor(
+      "#search",
+      `
       el.value = 'wabp';
       el.dispatchEvent(new Event('input', { bubbles: true }));
-    `),
+    `,
+    ),
   },
   {
-    name: 'pipeline',
-    page: 'src/dashboard/dashboard.html',
+    name: "pipeline",
+    page: "src/dashboard/dashboard.html",
     width: 1440,
     height: 900,
-    caption: 'One pipeline: history, stages, jobs and what it was built from',
-    driver: waitFor('.card-p', 'el.click();'),
+    caption: "One pipeline: history, stages, jobs and what it was built from",
+    driver: waitFor(".card-p", "el.click();"),
   },
   {
-    name: 'console',
-    page: 'src/dashboard/dashboard.html',
+    name: "console",
+    page: "src/dashboard/dashboard.html",
     width: 1440,
     height: 900,
-    caption: 'A job\'s console log, with severity colouring and the artifact tree',
+    caption:
+      "A job's console log, with severity colouring and the artifact tree",
     // Three steps in: open the pipeline, then the failed job's log. Each waits
     // for the screen before it, because every one of them paints from a reply.
-    driver: waitFor('.card-p', `
+    driver: waitFor(
+      ".card-p",
+      `
       el.click();
-      ${waitForText('.job-row', 'api-tests', "el.querySelector('.job-open').click();")}
-    `),
+      ${waitForText(".job-row", "api-tests", "el.querySelector('.job-open').click();")}
+    `,
+    ),
   },
   {
-    name: 'popup',
-    page: 'src/popup/popup.html',
+    name: "popup",
+    page: "src/popup/popup.html",
     width: 400,
     height: 600,
-    caption: 'The toolbar popup',
+    caption: "The toolbar popup",
   },
   {
-    name: 'settings',
-    page: 'src/setup/setup.html',
+    name: "settings",
+    page: "src/setup/setup.html",
     width: 1100,
     height: 950,
-    caption: 'Settings',
+    caption: "Settings",
   },
 ];
 
 // ------------------------------------------------------------------- server
 
 const MIME = {
-  '.html': 'text/html; charset=utf-8',
-  '.js': 'text/javascript; charset=utf-8',
-  '.mjs': 'text/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.svg': 'image/svg+xml',
-  '.png': 'image/png',
-  '.wav': 'audio/wav',
-  '.json': 'application/json',
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".mjs": "text/javascript; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+  ".wav": "audio/wav",
+  ".json": "application/json",
 };
 
 async function serve(shots) {
   const byName = new Map(shots.map((s) => [s.name, s]));
 
   const server = createServer(async (req, res) => {
-    const url = new URL(req.url, 'http://localhost');
+    const url = new URL(req.url, "http://localhost");
     // The harness page is served from the real page's own path, with the shot
     // named in the query. Serving it from /shot/<name> instead would re-root
     // every relative URL in the file -- ../common/base.css stops resolving and
     // the screenshot comes out as unstyled HTML.
-    const shotName = url.searchParams.get('shot');
-    const promoName = url.searchParams.get('promo');
+    const shotName = url.searchParams.get("shot");
+    const promoName = url.searchParams.get("promo");
 
-    if (process.env.SHOT_DEBUG) console.error('REQ', req.url);
+    if (process.env.SHOT_DEBUG) console.error("REQ", req.url);
     try {
       // A promo tile has no file on disk; it is composed from the tokens here.
       if (promoName) {
         const tile = byName.get(promoName);
         if (!tile) throw new Error(`no promo ${promoName}`);
-        res.writeHead(200, { 'Content-Type': MIME['.html'] });
+        res.writeHead(200, { "Content-Type": MIME[".html"] });
         res.end(promoTile(tile));
         return;
       }
@@ -644,30 +972,32 @@ async function serve(shots) {
       if (shotName) {
         const shot = byName.get(shotName);
         if (!shot) throw new Error(`no shot ${shotName}`);
-        const html = await readFile(join(ROOT, shot.page), 'utf8');
+        const html = await readFile(join(ROOT, shot.page), "utf8");
         // Injected ahead of the page's own <script type="module">, which is
         // deferred -- so the stub is in place before a line of the app runs.
         const injected = html.replace(
           /<script type="module"/,
           `<script>${harness({ replies: repliesFor(shot), driver: shot.driver })}</script>\n    <script type="module"`,
         );
-        res.writeHead(200, { 'Content-Type': MIME['.html'] });
+        res.writeHead(200, { "Content-Type": MIME[".html"] });
         res.end(injected);
         return;
       }
 
       const file = join(ROOT, decodeURIComponent(url.pathname));
-      if (!file.startsWith(ROOT)) throw new Error('outside root');
+      if (!file.startsWith(ROOT)) throw new Error("outside root");
       const body = await readFile(file);
-      res.writeHead(200, { 'Content-Type': MIME[extname(file)] || 'application/octet-stream' });
+      res.writeHead(200, {
+        "Content-Type": MIME[extname(file)] || "application/octet-stream",
+      });
       res.end(body);
     } catch (err) {
-      if (process.env.SHOT_DEBUG) console.error('404', req.url, err.message);
-      res.writeHead(404, { 'Content-Type': 'text/plain' }).end('not found');
+      if (process.env.SHOT_DEBUG) console.error("404", req.url, err.message);
+      res.writeHead(404, { "Content-Type": "text/plain" }).end("not found");
     }
   });
 
-  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   return { server, port: server.address().port };
 }
 
@@ -675,21 +1005,21 @@ async function serve(shots) {
 
 function capture({ url, out, width, height, profile, scale = 2 }) {
   const args = [
-    '--headless=new',
-    '--disable-gpu',
-    '--hide-scrollbars',
+    "--headless=new",
+    "--disable-gpu",
+    "--hide-scrollbars",
     `--force-device-scale-factor=${scale}`,
     `--user-data-dir=${profile}`,
     `--window-size=${width},${height}`,
-    '--virtual-time-budget=6000',
+    "--virtual-time-budget=6000",
     `--screenshot=${out}`,
     url,
   ];
   return new Promise((resolve, reject) => {
-    const child = spawn(CHROME, args, { stdio: ['ignore', 'ignore', 'pipe'] });
-    let stderr = '';
-    child.stderr.on('data', (d) => (stderr += d));
-    child.on('error', reject);
+    const child = spawn(CHROME, args, { stdio: ["ignore", "ignore", "pipe"] });
+    let stderr = "";
+    child.stderr.on("data", (d) => (stderr += d));
+    child.on("error", reject);
 
     // The page polls on a timer, so virtual time never runs dry and Chrome will
     // sit there indefinitely after writing the PNG. It also writes more than
@@ -704,13 +1034,14 @@ function capture({ url, out, width, height, profile, scale = 2 }) {
         const { size } = await stat(out);
         settled = size === last ? settled + 1 : 0;
         last = size;
-        if (size > 0 && settled >= 4 && Date.now() - started > 12_000) child.kill('SIGKILL');
+        if (size > 0 && settled >= 4 && Date.now() - started > 12_000)
+          child.kill("SIGKILL");
       } catch {
         /* not written yet */
       }
     }, 400);
-    const deadline = setTimeout(() => child.kill('SIGKILL'), 45_000);
-    child.on('exit', async () => {
+    const deadline = setTimeout(() => child.kill("SIGKILL"), 45_000);
+    child.on("exit", async () => {
       clearTimeout(deadline);
       clearInterval(poll);
       try {
@@ -726,20 +1057,22 @@ function capture({ url, out, width, height, profile, scale = 2 }) {
 // --------------------------------------------------------------------- main
 
 const arg = (flag) =>
-  process.argv.includes(flag) ? process.argv[process.argv.indexOf(flag) + 1] : null;
+  process.argv.includes(flag)
+    ? process.argv[process.argv.indexOf(flag) + 1]
+    : null;
 
 // The store wants exact pixel sizes at 1x and rejects anything else; the README
 // wants 2x, because it is read on retina screens.
-const store = process.argv.includes('--store');
-const site = process.argv.includes('--site');
+const store = process.argv.includes("--store");
+const site = process.argv.includes("--site");
 const all = store ? STORE : site ? SITE : SHOTS;
 const dir = store ? STORE_DIR : site ? SITE_DIR : SHOTS_DIR;
 const scale = store ? 1 : site ? 1 : 2;
 
-const only = arg('--only');
+const only = arg("--only");
 const shots = only ? all.filter((s) => s.name === only) : all;
 if (shots.length === 0) {
-  console.error(only ? `No shot named ${only}.` : 'Nothing to do.');
+  console.error(only ? `No shot named ${only}.` : "Nothing to do.");
   process.exit(1);
 }
 
@@ -775,8 +1108,9 @@ try {
   }
 } finally {
   server.close();
-  if (!process.argv.includes('--keep')) await rm(profile, { recursive: true, force: true });
+  if (!process.argv.includes("--keep"))
+    await rm(profile, { recursive: true, force: true });
 }
 
-const where = store ? 'docs/store' : site ? 'site/img' : 'docs/screenshots';
+const where = store ? "docs/store" : site ? "site/img" : "docs/screenshots";
 console.log(`\nWrote ${shots.length} image(s) to ${where}/`);

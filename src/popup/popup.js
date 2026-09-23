@@ -20,14 +20,14 @@ import {
   highlighted,
   stageStrip,
   applyOverflowTitles,
-} from '../common/ui.js';
+} from "../common/ui.js";
 import {
   pipelineStatus,
   STATUS,
   freshnessAgo,
   matchScore,
   fuzzyMatch,
-} from '../lib/status.js';
+} from "../lib/status.js";
 
 let pipelines = [];
 let favorites = [];
@@ -35,7 +35,7 @@ let watched = [];
 let views = [];
 let activeView = null;
 let fetchedAt = 0;
-let query = '';
+let query = "";
 /** How many rows are on screen; Load more raises it. */
 let shown = 8;
 
@@ -43,24 +43,27 @@ init();
 
 async function init() {
   await loadSprite();
-  $('#refresh').append(icon('refresh'));
-  $('#settings').append(icon('settings'));
-  $('#search-icon').append(icon('search', { size: 13 }));
-  $('#search-clear').append(icon('x', { size: 12 }));
-  $('#view-picker-icon').append(icon('list', { size: 13 }));
+  $("#refresh").append(icon("refresh"));
+  $("#settings").append(icon("settings"));
+  $("#search-icon").append(icon("search", { size: 13 }));
+  $("#search-clear").append(icon("x", { size: 12 }));
+  $("#view-picker-icon").append(icon("list", { size: 13 }));
 
-  $('#refresh').title = 'Fetch the latest from GoCD now';
-  $('#settings').title = 'Settings - connection, alerts, sounds and refresh rate';
+  $("#refresh").title = "Fetch the latest from GoCD now";
+  $("#settings").title =
+    "Settings - connection, alerts, sounds and refresh rate";
 
-  $('#settings').addEventListener('click', () => chrome.runtime.openOptionsPage());
-  $('#open-dashboard').addEventListener('click', () => openDashboard());
-  $('#refresh').addEventListener('click', () => load({ force: true }));
-  $('#view-select').addEventListener('change', (event) =>
+  $("#settings").addEventListener("click", () =>
+    chrome.runtime.openOptionsPage(),
+  );
+  $("#open-dashboard").addEventListener("click", () => openDashboard());
+  $("#refresh").addEventListener("click", () => load({ force: true }));
+  $("#view-select").addEventListener("change", (event) =>
     load({ force: true, view: event.target.value }),
   );
   wireSearch();
 
-  const bootstrap = await send('getState');
+  const bootstrap = await send("getState");
   applyTheme(bootstrap.settings.theme);
   favorites = bootstrap.favorites;
   watched = bootstrap.watched || [];
@@ -72,7 +75,7 @@ async function init() {
     return;
   }
 
-  restoreSearch(bootstrap.popupSearch || '');
+  restoreSearch(bootstrap.popupSearch || "");
 
   if (bootstrap.cache) {
     pipelines = bootstrap.cache.pipelines || [];
@@ -88,39 +91,39 @@ async function init() {
 }
 
 function wireSearch() {
-  const search = $('#search');
-  search.addEventListener('input', () => {
+  const search = $("#search");
+  search.addEventListener("input", () => {
     query = search.value;
-    $('#search-clear').hidden = !query;
+    $("#search-clear").hidden = !query;
     shown = 8;
     rememberSearch();
     render();
   });
 
-  search.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && query) {
+  search.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && query) {
       event.stopPropagation();
       clearSearch();
       return;
     }
     // Enter opens the best match in the full dashboard, where there is room to
     // actually do something with it.
-    if (event.key !== 'Enter') return;
+    if (event.key !== "Enter") return;
     const best = matches()[0];
     if (best) openDashboard({ pipeline: best.pipeline.name });
   });
 
-  $('#search-clear').addEventListener('click', clearSearch);
+  $("#search-clear").addEventListener("click", clearSearch);
 }
 
 function clearSearch() {
-  query = '';
-  $('#search').value = '';
-  $('#search-clear').hidden = true;
+  query = "";
+  $("#search").value = "";
+  $("#search-clear").hidden = true;
   shown = 8;
   rememberSearch();
   render();
-  $('#search').focus();
+  $("#search").focus();
 }
 
 /**
@@ -131,16 +134,16 @@ function clearSearch() {
  */
 function rememberSearch() {
   // Failing to remember a search is not worth interrupting anyone over.
-  send('setPopupSearch', { query }).catch(() => {});
+  send("setPopupSearch", { query }).catch(() => {});
 }
 
 /** Picks up a search from a popup dismissed moments ago; see the store's TTL. */
 function restoreSearch(saved) {
   if (!saved) return;
   query = saved;
-  const search = $('#search');
+  const search = $("#search");
   search.value = saved;
-  $('#search-clear').hidden = false;
+  $("#search-clear").hidden = false;
 
   // Re-assert it, which restarts the TTL and repaints the badge.
   //
@@ -158,8 +161,8 @@ function restoreSearch(saved) {
 }
 
 async function load({ force = false, view } = {}) {
-  const spinner = $('#refresh').querySelector('.icon');
-  spinner?.classList.add('spin');
+  const spinner = $("#refresh").querySelector(".icon");
+  spinner?.classList.add("spin");
   try {
     // Omitting `view` keeps whatever is selected; passing one switches to it.
     const payload = { force };
@@ -167,7 +170,7 @@ async function load({ force = false, view } = {}) {
       payload.view = view;
       shown = 8; // a different view is a different list
     }
-    const data = await send('refresh', payload);
+    const data = await send("refresh", payload);
     pipelines = data.pipelines || [];
     fetchedAt = data.fetchedAt || Date.now();
     activeView = data.view ?? null;
@@ -175,7 +178,7 @@ async function load({ force = false, view } = {}) {
   } catch (err) {
     render(explain(err));
   } finally {
-    spinner?.classList.remove('spin');
+    spinner?.classList.remove("spin");
   }
 }
 
@@ -184,24 +187,34 @@ function paintViewPicker() {
   // showing one is describing a set that is no longer on screen.
   const needle = query.trim();
   const matching = (names) =>
-    needle ? names.filter((name) => matchScore(needle, name) !== null).length : names.length;
+    needle
+      ? names.filter((name) => matchScore(needle, name) !== null).length
+      : names.length;
 
   // An option still has to exist when nothing in it matches, or a search that
   // empties the view you are in also removes the way back out of it.
   const builtins = [];
   if (favorites.length)
-    builtins.push({ value: 'local:starred', label: 'Starred', count: matching(favorites) });
+    builtins.push({
+      value: "local:starred",
+      label: "Starred",
+      count: matching(favorites),
+    });
   if (watched.length)
-    builtins.push({ value: 'local:watched', label: 'Watching', count: matching(watched) });
+    builtins.push({
+      value: "local:watched",
+      label: "Watching",
+      count: matching(watched),
+    });
 
-  const picker = $('#view-picker');
+  const picker = $("#view-picker");
   picker.hidden = views.length === 0 && builtins.length === 0;
   if (picker.hidden) return;
 
-  const select = clear($('#view-select'));
+  const select = clear($("#view-select"));
   for (const builtin of builtins) {
     select.append(
-      el('option', {
+      el("option", {
         value: builtin.value,
         text: `${builtin.label}  (${builtin.count})`,
         selected: activeView === builtin.value,
@@ -210,14 +223,20 @@ function paintViewPicker() {
   }
   for (const view of views) {
     select.append(
-      el('option', { value: view.name, text: view.name, selected: activeView === view.name }),
+      el("option", {
+        value: view.name,
+        text: view.name,
+        selected: activeView === view.name,
+      }),
     );
   }
   // A view deleted on the server would otherwise leave this showing the first
   // entry while the data on screen came from another.
   const known = [...builtins.map((b) => b.value), ...views.map((v) => v.name)];
   if (activeView && !known.includes(activeView)) {
-    select.append(el('option', { value: activeView, text: activeView, selected: true }));
+    select.append(
+      el("option", { value: activeView, text: activeView, selected: true }),
+    );
   }
 }
 
@@ -228,8 +247,14 @@ function matches() {
   return pipelines
     .map((pipeline) => ({ pipeline, score: matchScore(needle, pipeline.name) }))
     .filter((match) => match.score !== null)
-    .sort((a, b) => a.score - b.score || a.pipeline.name.localeCompare(b.pipeline.name))
-    .map((match) => ({ ...match, hits: fuzzyMatch(needle, match.pipeline.name) || [] }));
+    .sort(
+      (a, b) =>
+        a.score - b.score || a.pipeline.name.localeCompare(b.pipeline.name),
+    )
+    .map((match) => ({
+      ...match,
+      hits: fuzzyMatch(needle, match.pipeline.name) || [],
+    }));
 }
 
 /**
@@ -246,9 +271,12 @@ const PAGE = 8;
 function banded() {
   const sections = [];
 
-  const running = pipelines.filter((p) => pipelineStatus(p) === 'Building');
+  const running = pipelines.filter((p) => pipelineStatus(p) === "Building");
   if (running.length) {
-    sections.push({ title: `Running now (${running.length})`, members: running });
+    sections.push({
+      title: `Running now (${running.length})`,
+      members: running,
+    });
   }
 
   // Everything else in the view, with the pipelines you picked out at the top
@@ -259,7 +287,7 @@ function banded() {
   if (rest.length) {
     // "Other" only means anything when something came before it.
     sections.push({
-      title: sections.length ? 'Other pipelines in view' : 'Pipelines in view',
+      title: sections.length ? "Other pipelines in view" : "Pipelines in view",
       members: rest,
     });
   }
@@ -275,9 +303,9 @@ function rank(pipeline) {
 }
 
 function viewLabel() {
-  if (activeView === 'local:starred') return 'Starred';
-  if (activeView === 'local:watched') return 'Watching';
-  return activeView || 'All pipelines';
+  if (activeView === "local:starred") return "Starred";
+  if (activeView === "local:watched") return "Watching";
+  return activeView || "All pipelines";
 }
 
 function render(warning = null) {
@@ -286,29 +314,34 @@ function render(warning = null) {
   // thing read -- so they count what is on screen, not what is behind it.
   const found = query.trim() ? matches() : null;
   const inView = found ? found.map((match) => match.pipeline) : pipelines;
-  const failing = inView.filter((p) => pipelineStatus(p) === 'Failed');
-  const running = inView.filter((p) => pipelineStatus(p) === 'Building');
+  const failing = inView.filter((p) => pipelineStatus(p) === "Failed");
+  const running = inView.filter((p) => pipelineStatus(p) === "Building");
 
   paintViewPicker();
 
-  $('#freshness').textContent = fetchedAt ? freshnessAgo(fetchedAt) : '';
+  $("#freshness").textContent = fetchedAt ? freshnessAgo(fetchedAt) : "";
 
-  const summary = clear($('#summary'));
+  const summary = clear($("#summary"));
   summary.append(
-    stat('fail', failing.length, 'Failing', 'failing'),
-    stat('build', running.length, 'Running', 'building'),
-    stat('pass', inView.length - failing.length - running.length, 'Green', 'all'),
+    stat("fail", failing.length, "Failing", "failing"),
+    stat("build", running.length, "Running", "building"),
+    stat(
+      "pass",
+      inView.length - failing.length - running.length,
+      "Green",
+      "all",
+    ),
   );
 
-  const body = clear($('#body'));
+  const body = clear($("#body"));
 
   if (warning) {
     body.append(
       el(
-        'div',
-        { class: 'banner banner-warn', style: { marginBottom: '8px' } },
-        icon('offline'),
-        el('span', { text: warning }),
+        "div",
+        { class: "banner banner-warn", style: { marginBottom: "8px" } },
+        icon("offline"),
+        el("span", { text: warning }),
       ),
     );
   }
@@ -322,11 +355,13 @@ function render(warning = null) {
   if (pipelines.length === 0) {
     body.append(
       el(
-        'div',
-        { class: 'empty' },
-        icon('layers', { size: 24 }),
-        el('h3', { text: 'Nothing in this view' }),
-        el('p', { text: 'Pick another view above, or open the dashboard to go and find some.' }),
+        "div",
+        { class: "empty" },
+        icon("layers", { size: 24 }),
+        el("h3", { text: "Nothing in this view" }),
+        el("p", {
+          text: "Pick another view above, or open the dashboard to go and find some.",
+        }),
       ),
     );
     return;
@@ -341,19 +376,22 @@ function render(warning = null) {
  * list rather than just the band it happens to sit under.
  */
 function paintSections(body, sections, { searching = false }) {
-  const total = sections.reduce((sum, section) => sum + section.members.length, 0);
+  const total = sections.reduce(
+    (sum, section) => sum + section.members.length,
+    0,
+  );
 
   if (searching && total === 0) {
     body.append(
       el(
-        'div',
-        { class: 'empty' },
-        icon('search', { size: 22 }),
-        el('h3', { text: 'No match' }),
-        el('p', {
+        "div",
+        { class: "empty" },
+        icon("search", { size: 22 }),
+        el("h3", { text: "No match" }),
+        el("p", {
           text: activeView
             ? `Nothing in "${viewLabel()}" matches that. Try another view.`
-            : 'No pipeline matches that.',
+            : "No pipeline matches that.",
         }),
       ),
     );
@@ -362,9 +400,9 @@ function paintSections(body, sections, { searching = false }) {
 
   if (searching) {
     body.append(
-      el('div', {
-        class: 'pop-title',
-        text: `${total} match${total === 1 ? '' : 'es'} - Enter opens the first`,
+      el("div", {
+        class: "pop-title",
+        text: `${total} match${total === 1 ? "" : "es"} - Enter opens the first`,
       }),
     );
   }
@@ -375,8 +413,10 @@ function paintSections(body, sections, { searching = false }) {
     const slice = section.members.slice(0, budget);
     budget -= slice.length;
 
-    if (section.title) body.append(el('div', { class: 'pop-title', text: section.title }));
-    for (const entry of slice) body.append(row(entry.pipeline || entry, entry.hits || []));
+    if (section.title)
+      body.append(el("div", { class: "pop-title", text: section.title }));
+    for (const entry of slice)
+      body.append(row(entry.pipeline || entry, entry.hits || []));
   }
 
   const remaining = total - Math.min(shown, total);
@@ -384,32 +424,35 @@ function paintSections(body, sections, { searching = false }) {
 
   body.append(
     el(
-      'button',
+      "button",
       {
-        class: 'pop-more',
+        class: "pop-more",
         onclick: () => {
           shown += PAGE * 2;
           render();
         },
       },
-      'Load more',
+      "Load more",
     ),
   );
 }
 
 /** Pipeline names are long and the popup is narrow, so most rows clip. */
 function titleClippedRows() {
-  applyOverflowTitles($('#body'));
+  applyOverflowTitles($("#body"));
 }
 
 function stat(kind, value, label, filter) {
   return el(
-    'button',
+    "button",
     // Carrying the search matters most where the count is smallest: clicking
     // "Failing 1" under a search must not open the other 900.
-    { class: `stat ${kind}`, onclick: () => openDashboard({ filter, search: query.trim() || null }) },
-    el('span', { class: 'n', text: String(value) }),
-    el('span', { class: 'l', text: label }),
+    {
+      class: `stat ${kind}`,
+      onclick: () => openDashboard({ filter, search: query.trim() || null }),
+    },
+    el("span", { class: "n", text: String(value) }),
+    el("span", { class: "l", text: label }),
   );
 }
 
@@ -418,54 +461,61 @@ function row(pipeline, hits = []) {
   const tone = (STATUS[status] || STATUS.Unknown).tone;
   const run = pipeline._embedded?.instances?.[0];
 
-  const name = el('span', { class: 'truncate', style: { flex: '1' } });
+  const name = el("span", { class: "truncate", style: { flex: "1" } });
   name.append(highlighted(pipeline.name, hits));
 
   return el(
-    'button',
-    { class: `pop-row edge-${tone}`, onclick: () => openDashboard({ pipeline: pipeline.name }) },
+    "button",
+    {
+      class: `pop-row edge-${tone}`,
+      onclick: () => openDashboard({ pipeline: pipeline.name }),
+    },
     watched.includes(pipeline.name)
-      ? icon('bell-filled', { size: 12 })
-      : favorites.includes(pipeline.name) && icon('star-filled', { size: 12 }),
+      ? icon("bell-filled", { size: 12 })
+      : favorites.includes(pipeline.name) && icon("star-filled", { size: 12 }),
     name,
     run?.label &&
-      el('span', { class: 'faint mono truncate', style: { maxWidth: '70px' }, text: run.label }),
+      el("span", {
+        class: "faint mono truncate",
+        style: { maxWidth: "70px" },
+        text: run.label,
+      }),
     stageStrip(run?._embedded?.stages, { compact: true }),
-    icon('chevron-right', { size: 13 }),
+    icon("chevron-right", { size: 13 }),
   );
 }
 
 function renderLoading() {
-  clear($('#body')).append(
+  clear($("#body")).append(
     el(
-      'div',
-      { class: 'empty' },
-      icon('refresh', { size: 22, class: 'spin' }),
-      el('p', { text: 'Loading pipelines...' }),
+      "div",
+      { class: "empty" },
+      icon("refresh", { size: 22, class: "spin" }),
+      el("p", { text: "Loading pipelines..." }),
     ),
   );
 }
 
 function renderNotConnected() {
-  clear($('#summary'));
-  $('#controls').hidden = true;
-  clear($('#body')).append(
+  clear($("#summary"));
+  $("#controls").hidden = true;
+  clear($("#body")).append(
     el(
-      'div',
-      { class: 'empty' },
-      icon('layers', { size: 26 }),
-      el('h3', { text: 'Not connected yet' }),
-      el('p', {
-        text: 'Point GoCD Lens at your GoCD server and it will read your pipelines straight from the API.',
+      "div",
+      { class: "empty" },
+      icon("layers", { size: 26 }),
+      el("h3", { text: "Not connected yet" }),
+      el("p", {
+        text: "Point GoCD Lens at your GoCD server and it will read your pipelines straight from the API.",
       }),
-      el('button', {
-        class: 'btn btn-primary',
-        text: 'Set it up',
+      el("button", {
+        class: "btn btn-primary",
+        text: "Set it up",
         onclick: () => chrome.runtime.openOptionsPage(),
       }),
     ),
   );
-  $('#open-dashboard').disabled = true;
+  $("#open-dashboard").disabled = true;
 }
 
 function openDashboard(params = {}) {
@@ -473,7 +523,9 @@ function openDashboard(params = {}) {
     Object.fromEntries(Object.entries(params).filter(([, v]) => v != null)),
   ).toString();
   chrome.tabs.create({
-    url: chrome.runtime.getURL(`src/dashboard/dashboard.html${search ? `?${search}` : ''}`),
+    url: chrome.runtime.getURL(
+      `src/dashboard/dashboard.html${search ? `?${search}` : ""}`,
+    ),
   });
   window.close();
 }

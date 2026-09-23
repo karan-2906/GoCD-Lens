@@ -10,16 +10,16 @@
  */
 
 const K = {
-  connection: 'connection',
-  settings: 'settings',
-  favorites: 'favorites',
-  watched: 'watchedPipelines',
-  cache: 'dashboardCache',
-  seen: 'lastSeenStatus',
-  recent: 'recentPipelines',
-  expanded: 'expandedGroups',
-  views: 'viewDefinitions',
-  popupSearch: 'popupSearch',
+  connection: "connection",
+  settings: "settings",
+  favorites: "favorites",
+  watched: "watchedPipelines",
+  cache: "dashboardCache",
+  seen: "lastSeenStatus",
+  recent: "recentPipelines",
+  expanded: "expandedGroups",
+  views: "viewDefinitions",
+  popupSearch: "popupSearch",
 };
 
 export const DEFAULT_SETTINGS = {
@@ -69,7 +69,7 @@ export const DEFAULT_SETTINGS = {
    * What the toolbar badge counts: 'view' (whatever is open), 'watched', or
    * 'starred'.
    */
-  badgeSource: 'view',
+  badgeSource: "view",
   /**
    * A chime alongside a watched pipeline's start and finish notifications.
    *
@@ -78,8 +78,8 @@ export const DEFAULT_SETTINGS = {
    * for everything rather than just this.
    */
   sound: true,
-  theme: 'system',
-  density: 'comfortable',
+  theme: "system",
+  density: "comfortable",
 };
 
 /**
@@ -130,17 +130,17 @@ export function redactConnection(conn) {
   return {
     serverUrl: conn.serverUrl,
     authMode: conn.authMode,
-    username: conn.authMode === 'basic' ? conn.username : undefined,
+    username: conn.authMode === "basic" ? conn.username : undefined,
     hasSecret: Boolean(conn.token || conn.password),
     secretHint: secretHint(conn),
   };
 }
 
 function secretHint(conn) {
-  const secret = conn.authMode === 'basic' ? conn.password : conn.token;
+  const secret = conn.authMode === "basic" ? conn.password : conn.token;
   if (!secret) return null;
   // Enough to tell two tokens apart, not enough to be worth stealing.
-  return `${'•'.repeat(8)}${secret.slice(-4)}`;
+  return `${"•".repeat(8)}${secret.slice(-4)}`;
 }
 
 export async function clearConnection() {
@@ -262,8 +262,8 @@ export const POPUP_SEARCH_TTL_MS = 5 * 60 * 1000;
 
 export async function getPopupSearch() {
   const saved = await get(K.popupSearch, null);
-  if (!saved?.query) return '';
-  return Date.now() - (saved.at || 0) < POPUP_SEARCH_TTL_MS ? saved.query : '';
+  if (!saved?.query) return "";
+  return Date.now() - (saved.at || 0) < POPUP_SEARCH_TTL_MS ? saved.query : "";
 }
 
 export async function setPopupSearch(query) {

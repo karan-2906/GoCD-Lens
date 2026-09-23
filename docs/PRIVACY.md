@@ -15,14 +15,14 @@ telemetry, no crash reporting and no "anonymous usage statistics".
 Everything below is stored in `chrome.storage.local`, which is a file inside your own browser
 profile on your own machine. It is never uploaded anywhere.
 
-| What | Why it is kept | When it is written |
-|---|---|---|
-| Your GoCD server URL | It is the one address the extension is allowed to contact | When you press Connect |
-| Your sign-in choice | To know whether to use your existing session, a token, or basic auth | When you press Connect |
-| A personal access token or password, **only if you choose one of those modes** | It is sent to your GoCD server to authenticate your own requests | When you press Connect |
-| Display settings — refresh interval, theme, density, notification and badge preferences | To keep the extension the way you set it | When you change a setting |
-| The names of pipelines you star or watch | To pin them and to notify you about them | When you star or watch one |
-| The most recent dashboard response from your server | So the tab paints instantly, and still shows something when the server or VPN is down | On every refresh |
+| What                                                                                    | Why it is kept                                                                        | When it is written         |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | -------------------------- |
+| Your GoCD server URL                                                                    | It is the one address the extension is allowed to contact                             | When you press Connect     |
+| Your sign-in choice                                                                     | To know whether to use your existing session, a token, or basic auth                  | When you press Connect     |
+| A personal access token or password, **only if you choose one of those modes**          | It is sent to your GoCD server to authenticate your own requests                      | When you press Connect     |
+| Display settings — refresh interval, theme, density, notification and badge preferences | To keep the extension the way you set it                                              | When you change a setting  |
+| The names of pipelines you star or watch                                                | To pin them and to notify you about them                                              | When you star or watch one |
+| The most recent dashboard response from your server                                     | So the tab paints instantly, and still shows something when the server or VPN is down | On every refresh           |
 
 **`chrome.storage.sync` is never used anywhere in this extension.** That is the storage area that
 would copy data to your Google account and to every other machine you are signed in on. A test in
@@ -52,7 +52,6 @@ nothing, and rides a session cookie that Chrome does encrypt at rest. If you do 
 credential, prefer a personal access token over your password -- a token can be revoked on its
 own.
 
-
 ---
 
 ## What the extension sends, and to whom
@@ -72,13 +71,13 @@ a CDN.
 
 ## Permissions, and why each one exists
 
-| Permission | What it is for |
-|---|---|
-| `storage` | The local storage described above |
-| `alarms` | The optional background check that keeps the toolbar badge current when no dashboard tab is open. It ships **off** |
-| `notifications` | Telling you when a pipeline you explicitly chose to watch starts or finishes, or when a starred pipeline turns red |
-| `offscreen` | A Manifest V3 service worker has no DOM and cannot play a sound. The offscreen document exists only to play the short bundled chime |
-| Host access | Requested **one origin at a time**, at the moment you press Connect. The extension ships with no site access at all |
+| Permission      | What it is for                                                                                                                      |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `storage`       | The local storage described above                                                                                                   |
+| `alarms`        | The optional background check that keeps the toolbar badge current when no dashboard tab is open. It ships **off**                  |
+| `notifications` | Telling you when a pipeline you explicitly chose to watch starts or finishes, or when a starred pipeline turns red                  |
+| `offscreen`     | A Manifest V3 service worker has no DOM and cannot play a sound. The offscreen document exists only to play the short bundled chime |
+| Host access     | Requested **one origin at a time**, at the moment you press Connect. The extension ships with no site access at all                 |
 
 GoCD Lens has **no content scripts**, so it cannot read, alter or observe any web page you visit.
 It has no `tabs`, `cookies`, `webRequest`, `history` or `scripting` permission.

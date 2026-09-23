@@ -4,7 +4,7 @@
 
 GoCD Lens is a browser extension for Chrome, Edge and Brave that reads your GoCD server's REST API
 and draws its own dashboard. One request loads every pipeline group and its latest run; each card
-carries a per-stage strip, so you can see *where* something broke without opening it; four letters
+carries a per-stage strip, so you can see _where_ something broke without opening it; four letters
 find a pipeline among thousands; and console logs tail live while a job runs.
 
 It is built for large installations -- thousands of pipelines, hundreds failing at any time --
@@ -21,7 +21,7 @@ the server you point it at.
 ## What it looks like
 
 **The pipeline list.** Every group and pipeline from one request, each card carrying a per-stage
-strip so you can see *where* a run broke without opening it. Starred pipelines pin to the top;
+strip so you can see _where_ a run broke without opening it. Starred pipelines pin to the top;
 groups below them fold.
 
 ![The GoCD Lens pipeline list: filter chips for failing, running, starred, watching and paused, a sidebar of pipeline groups, and colour-coded pipeline cards grouped by section](docs/screenshots/dashboard.png)
@@ -67,7 +67,7 @@ The whole thing follows your system theme, or you can pin it light or dark:
 
 - Every group and pipeline you can see, loaded in **one request** and cached to disk, so opening
   the tab paints instantly and stays readable when the network is gone
-- Colour-coded cards with a per-stage strip, so you can see *where* a run broke without clicking
+- Colour-coded cards with a per-stage strip, so you can see _where_ a run broke without clicking
 - Filter chips: failing, running, starred, paused
 - Fuzzy search — type `wabp` to find `web-app-build-prod`, matched letters highlighted
 - Star the pipelines you care about; they pin to the top of every list
@@ -91,7 +91,7 @@ The whole thing follows your system theme, or you can pin it light or dark:
 - **Re-run chosen jobs.** A stage of a dozen parallel e2e jobs is normal, and
   re-running all of them to retry one flaky job wastes agents and minutes. The
   job rows carry a checkbox, with the failed ones already ticked, and the button
-  reads *Re-run selected (n)* until every job is picked -- which is the whole stage
+  reads _Re-run selected (n)_ until every job is picked -- which is the whole stage
 - Every one of these confirms first, and says what happened
 
 **Console logs**
@@ -111,7 +111,7 @@ or switched off). A failure stays on screen until acknowledged; a pass does not.
 This is separate from starring, which only pins a pipeline to the top of the list. Wanting
 something in easy reach and wanting to be interrupted by it are different wishes.
 
-It notifies on the *change*, never the state, and remembers run counters as well as statuses — so
+It notifies on the _change_, never the state, and remembers run counters as well as statuses — so
 a pipeline that starts and finishes between two polls is still reported, and one that has been red
 all week stays quiet.
 
@@ -177,11 +177,11 @@ For a managed fleet there is a third route -- host the `.crx` internally and pus
 
 Three choices, in the order worth trying:
 
-| | What it does | When to use it |
-|---|---|---|
-| **Existing GoCD login** *(default)* | Rides the session cookie you already have from logging into GoCD in this browser. **Nothing is stored at all.** | Start here. If GoCD works in a tab, this usually works. |
-| **Personal access token** | Sends `Authorization: Bearer`. Survives session expiry and sidesteps GoCD's CSRF checks on actions. | If session mode fails, or trigger/pause gets refused. GoCD profile → Personal Access Tokens. |
-| **Username and password** | Sends HTTP basic auth. | Older servers with no token support. |
+|                                     | What it does                                                                                                    | When to use it                                                                               |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| **Existing GoCD login** _(default)_ | Rides the session cookie you already have from logging into GoCD in this browser. **Nothing is stored at all.** | Start here. If GoCD works in a tab, this usually works.                                      |
+| **Personal access token**           | Sends `Authorization: Bearer`. Survives session expiry and sidesteps GoCD's CSRF checks on actions.             | If session mode fails, or trigger/pause gets refused. GoCD profile → Personal Access Tokens. |
+| **Username and password**           | Sends HTTP basic auth.                                                                                          | Older servers with no token support.                                                         |
 
 Setup **verifies the credential against your server before saving it**, so a typo or a blocked
 session surfaces there and then, rather than as a mysteriously empty dashboard later.
@@ -204,7 +204,7 @@ from. You can still read yesterday's failure while you reconnect.
 worker rather than by the page. Chrome exempts an extension's own contexts from CORS for hosts
 listed in its permissions, so GoCD does not need to send `Access-Control-Allow-Origin`, and no
 `OPTIONS` preflight is sent — which also means headers like `X-GoCD-Confirm` never have to survive
-a preflight your server might reject. Content scripts *are* subject to CORS; this extension has
+a preflight your server might reject. Content scripts _are_ subject to CORS; this extension has
 none.
 
 **Internal certificate authority.** Chrome uses your OS trust store, the same one that already lets
@@ -216,7 +216,7 @@ want one.
 an API request with an HTML login page instead of JSON, or may refuse to accept the session cookie
 on an extension-initiated request. GoCD Lens recognises both: a redirect to a login page is
 reported as an expired session, and an HTML page from a gateway is collapsed into
-*"a proxy or gateway answered instead of GoCD"* rather than being dumped into the UI. In either
+_"a proxy or gateway answered instead of GoCD"_ rather than being dumped into the UI. In either
 case, switch to a **personal access token**, which carries its own credential and does not depend
 on cookies.
 
@@ -353,14 +353,14 @@ docs/screenshots/       written by tools/make-screenshots.mjs; not shipped in th
 
 ### The tests
 
-| File | What it defends |
-|---|---|
-| `status.test.mjs` | Rollups, fuzzy search, and the parsers that turn server-supplied text into URLs — including that hostile material descriptions are dropped, not escaped |
-| `gocd-client.test.mjs` | Every endpoint against a mock GoCD: Accept versions, `X-GoCD-Confirm`, the paging cursor, the tail offset, and that a proxy's HTML never leaks into the UI |
-| `store.test.mjs` | Secrets go in and do not come back out; nothing touches synced storage |
-| `dom-safety.test.mjs` | A build log cannot become markup, checked against a DOM stub that would happily let it |
-| `service-worker.test.mjs` | Badge counts, notify-on-change-not-state, cache fallback when GoCD is unreachable, and that no reply to a page carries the token |
-| `package-integrity.test.mjs` | The privacy claims above, checked against the manifest and the source |
+| File                         | What it defends                                                                                                                                            |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `status.test.mjs`            | Rollups, fuzzy search, and the parsers that turn server-supplied text into URLs — including that hostile material descriptions are dropped, not escaped    |
+| `gocd-client.test.mjs`       | Every endpoint against a mock GoCD: Accept versions, `X-GoCD-Confirm`, the paging cursor, the tail offset, and that a proxy's HTML never leaks into the UI |
+| `store.test.mjs`             | Secrets go in and do not come back out; nothing touches synced storage                                                                                     |
+| `dom-safety.test.mjs`        | A build log cannot become markup, checked against a DOM stub that would happily let it                                                                     |
+| `service-worker.test.mjs`    | Badge counts, notify-on-change-not-state, cache fallback when GoCD is unreachable, and that no reply to a page carries the token                           |
+| `package-integrity.test.mjs` | The privacy claims above, checked against the manifest and the source                                                                                      |
 
 ### Compatibility
 

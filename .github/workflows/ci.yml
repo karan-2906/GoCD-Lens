@@ -22,7 +22,7 @@ jobs:
           # passes a quoted glob to `node --test`, and glob support landed in
           # Node 21. Worth settling one way or the other -- either the floor is
           # wrong or the script should expand the glob itself.
-          node-version: '22'
+          node-version: "22"
 
       # No `npm ci`: there are no dependencies, and there is no lockfile to
       # install from. That is deliberate, and package-integrity enforces it.

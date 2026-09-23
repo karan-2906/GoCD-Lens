@@ -18,7 +18,7 @@ on:
   pull_request:
   schedule:
     # Once a week, because an advisory can land long after a file last changed.
-    - cron: '0 3 * * 1'
+    - cron: "0 3 * * 1"
 
 permissions:
   contents: read

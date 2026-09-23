@@ -9,9 +9,9 @@
 
 /** Every chime that ships, by the name the service worker asks for. */
 const SOUNDS = {
-  start: 'sounds/start.wav',
-  success: 'sounds/success.wav',
-  failure: 'sounds/failure.wav',
+  start: "sounds/start.wav",
+  success: "sounds/success.wav",
+  failure: "sounds/failure.wav",
 };
 
 // Kept so a burst of finishing pipelines does not re-read the files each time.
@@ -24,7 +24,7 @@ async function play(name) {
   let audio = cache.get(name);
   if (!audio) {
     audio = new Audio(chrome.runtime.getURL(path));
-    audio.preload = 'auto';
+    audio.preload = "auto";
     cache.set(name, audio);
   }
 
@@ -46,9 +46,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // Every extension context receives every runtime message, so ignore the ones
   // addressed to the service worker rather than answering them.
   if (sender.id !== chrome.runtime.id) return false;
-  if (message?.target !== 'offscreen') return false;
+  if (message?.target !== "offscreen") return false;
 
-  if (message.type === 'playSound') {
+  if (message.type === "playSound") {
     play(message.payload?.name).then(sendResponse);
     // Answering matters beyond politeness: it is how the worker tells "played"
     // apart from "this page was not listening yet", which is the difference

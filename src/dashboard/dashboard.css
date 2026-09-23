@@ -184,7 +184,7 @@ body {
   color: var(--text);
 }
 
-.chip[aria-pressed='true'] {
+.chip[aria-pressed="true"] {
   color: var(--text);
   background: var(--surface);
   border-color: var(--border-strong);
@@ -200,14 +200,14 @@ body {
   color: var(--text-muted);
 }
 
-.chip.chip-fail[aria-pressed='true'] {
+.chip.chip-fail[aria-pressed="true"] {
   color: var(--fail);
   border-color: color-mix(in srgb, var(--fail) 45%, var(--border));
   box-shadow: none;
   background: var(--fail-soft);
 }
 
-.chip.chip-build[aria-pressed='true'] {
+.chip.chip-build[aria-pressed="true"] {
   color: var(--build);
   border-color: color-mix(in srgb, var(--build) 45%, var(--border));
   box-shadow: none;
@@ -235,14 +235,14 @@ body {
   opacity: 1;
 }
 
-.chip.chip-watch[aria-pressed='true'] {
+.chip.chip-watch[aria-pressed="true"] {
   color: var(--accent);
   border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
   box-shadow: none;
   background: var(--accent-soft);
 }
 
-.chip.chip-star[aria-pressed='true'] {
+.chip.chip-star[aria-pressed="true"] {
   color: var(--cancel);
   border-color: color-mix(in srgb, var(--cancel) 45%, var(--border));
   box-shadow: none;
@@ -409,7 +409,7 @@ body {
   color: var(--text);
 }
 
-.nav-item[aria-current='true'] {
+.nav-item[aria-current="true"] {
   background: var(--accent-soft);
   color: var(--accent);
   font-weight: 560;
@@ -426,7 +426,7 @@ body {
   color: var(--text-faint);
 }
 
-.nav-item[aria-current='true'] .icon {
+.nav-item[aria-current="true"] .icon {
   color: var(--accent);
 }
 
@@ -824,7 +824,7 @@ body {
   background: var(--surface-hover);
 }
 
-.run-row[aria-current='true'] {
+.run-row[aria-current="true"] {
   background: var(--accent-soft);
   box-shadow: inset 2px 0 0 var(--accent);
 }
@@ -1137,7 +1137,7 @@ body {
   color: var(--text);
 }
 
-.tab[aria-selected='true'] {
+.tab[aria-selected="true"] {
   color: var(--text);
   background: var(--surface-hover);
   font-weight: 560;
@@ -1158,7 +1158,7 @@ body {
   margin: 0;
 }
 
-.viewer-toolbar input[type='text'] {
+.viewer-toolbar input[type="text"] {
   height: 30px;
 }
 
@@ -1312,7 +1312,7 @@ body {
   }
   .topbar {
     grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas: 'left right' 'center center';
+    grid-template-areas: "left right" "center center";
     row-gap: 8px;
   }
   .topbar-left {
@@ -1344,7 +1344,12 @@ body {
 .skeleton {
   height: 74px;
   border-radius: var(--radius);
-  background: linear-gradient(90deg, var(--surface) 25%, var(--surface-hover) 37%, var(--surface) 63%);
+  background: linear-gradient(
+    90deg,
+    var(--surface) 25%,
+    var(--surface-hover) 37%,
+    var(--surface) 63%
+  );
   background-size: 400% 100%;
   animation: shimmer 1.3s ease-in-out infinite;
 }
@@ -1370,4 +1375,3 @@ kbd {
 }
 
 /* ------------------------------------------------------------ job picker */
-

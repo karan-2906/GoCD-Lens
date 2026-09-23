@@ -33,18 +33,25 @@ import {
   setViewDefinitions,
   wipeEverything,
   backgroundPeriodMinutes,
-} from '../lib/store.js';
-import { GoCdClient, GoCdError, originPattern } from '../lib/gocd.js';
-import { pipelineStatus, stageStatus, isActive, matchScore } from '../lib/status.js';
+} from "../lib/store.js";
+import { GoCdClient, GoCdError, originPattern } from "../lib/gocd.js";
+import {
+  pipelineStatus,
+  stageStatus,
+  isActive,
+  matchScore,
+} from "../lib/status.js";
 
-const POLL_ALARM = 'gocd-lens-poll';
+const POLL_ALARM = "gocd-lens-poll";
 
 // ---------------------------------------------------------------- lifecycle
 
 chrome.runtime.onInstalled.addListener(async (details) => {
   await ensureAlarm();
-  if (details.reason === 'install') {
-    chrome.tabs.create({ url: chrome.runtime.getURL('src/setup/setup.html?welcome=1') });
+  if (details.reason === "install") {
+    chrome.tabs.create({
+      url: chrome.runtime.getURL("src/setup/setup.html?welcome=1"),
+    });
   }
 });
 
@@ -63,7 +70,10 @@ async function ensureAlarm() {
     return;
   }
   if (existing && existing.periodInMinutes === minutes) return;
-  chrome.alarms.create(POLL_ALARM, { periodInMinutes: minutes, delayInMinutes: 0.2 });
+  chrome.alarms.create(POLL_ALARM, {
+    periodInMinutes: minutes,
+    delayInMinutes: 0.2,
+  });
 }
 
 /**
@@ -84,7 +94,9 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name !== POLL_ALARM) return;
   try {
     const cached = await getCache();
-    const busy = (cached?.pipelines || []).some((p) => isActive(pipelineStatus(p)));
+    const busy = (cached?.pipelines || []).some((p) =>
+      isActive(pipelineStatus(p)),
+    );
     if (busy) quietPolls = 0;
     else if (shouldSkipBackgroundPoll(cached)) {
       quietPolls += 1;
@@ -102,9 +114,11 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 });
 
 chrome.notifications.onClicked.addListener((notificationId) => {
-  const pipeline = notificationId.startsWith('pipeline:') ? notificationId.slice(9) : null;
+  const pipeline = notificationId.startsWith("pipeline:")
+    ? notificationId.slice(9)
+    : null;
   const url = chrome.runtime.getURL(
-    `src/dashboard/dashboard.html${pipeline ? `?pipeline=${encodeURIComponent(pipeline)}` : ''}`,
+    `src/dashboard/dashboard.html${pipeline ? `?pipeline=${encodeURIComponent(pipeline)}` : ""}`,
   );
   chrome.tabs.create({ url });
   chrome.notifications.clear(notificationId);
@@ -114,14 +128,17 @@ chrome.notifications.onClicked.addListener((notificationId) => {
 
 async function client() {
   const conn = await getConnection();
-  if (!conn) throw new GoCdError('No GoCD server configured yet.', { kind: 'config' });
+  if (!conn)
+    throw new GoCdError("No GoCD server configured yet.", { kind: "config" });
   return new GoCdClient(conn);
 }
 
 /** Has the user granted this extension access to the configured host? */
 async function hasHostPermission(serverUrl) {
   try {
-    return await chrome.permissions.contains({ origins: [originPattern(serverUrl)] });
+    return await chrome.permissions.contains({
+      origins: [originPattern(serverUrl)],
+    });
   } catch {
     return false;
   }
@@ -135,7 +152,11 @@ let inFlight = null;
  * Fetch the dashboard, fall back to the cache, and keep the toolbar badge and
  * notifications in step. Concurrent callers share one request.
  */
-async function refreshDashboard({ force = false, view = undefined, background = false } = {}) {
+async function refreshDashboard({
+  force = false,
+  view = undefined,
+  background = false,
+} = {}) {
   // Pollers share one request -- see the cache note below, it is the same
   // reasoning -- but only while they are all asking the same question.
   if (inFlight && view === undefined) return inFlight;
@@ -203,7 +224,11 @@ async function refreshDashboard({ force = false, view = undefined, background = 
     }
 
     if (result.notModified && cached && sameView) {
-      const payload = { ...cached, etag: result.etag || cached.etag, fetchedAt: Date.now() };
+      const payload = {
+        ...cached,
+        etag: result.etag || cached.etag,
+        fetchedAt: Date.now(),
+      };
       await setCache(payload);
       await setBadge({ pipelines: payload.pipelines });
       return payload;
@@ -232,7 +257,10 @@ async function refreshDashboard({ force = false, view = undefined, background = 
       // Silent on a first load with nothing to compare against, on a view
       // change, and on a background poll when being interrupted with nothing
       // open was not asked for. The badge still updates in every case.
-      silent: (!background && !cached) || !sameView || (background && !settings.notifyWhenClosed),
+      silent:
+        (!background && !cached) ||
+        !sameView ||
+        (background && !settings.notifyWhenClosed),
     });
     await setBadge({ pipelines: payload.pipelines });
     return payload;
@@ -258,21 +286,21 @@ function describe(err) {
  * being able to watch a handful of pipelines from across the whole instance.
  */
 export const BUILTIN_VIEWS = {
-  'local:starred': { label: 'Starred', source: 'favorites' },
-  'local:watched': { label: 'Watching', source: 'watched' },
+  "local:starred": { label: "Starred", source: "favorites" },
+  "local:watched": { label: "Watching", source: "watched" },
 };
 
 export function isBuiltinView(name) {
-  return typeof name === 'string' && name.startsWith('local:');
+  return typeof name === "string" && name.startsWith("local:");
 }
 
 async function builtinDefinition(name) {
   const builtin = BUILTIN_VIEWS[name];
   if (!builtin) return null;
-  const pipelines = builtin.source === 'watched' ? await getWatched() : await getFavorites();
-  return { name, type: 'whitelist', state: [], pipelines };
+  const pipelines =
+    builtin.source === "watched" ? await getWatched() : await getFavorites();
+  return { name, type: "whitelist", state: [], pipelines };
 }
-
 
 /**
  * Apply a personalized view to a dashboard payload.
@@ -288,27 +316,34 @@ export function applyView({ groups, pipelines }, definition) {
   if (!definition) return { groups, pipelines };
 
   const listed = new Set(definition.pipelines || []);
-  const blacklist = definition.type === 'blacklist';
+  const blacklist = definition.type === "blacklist";
   // A view with an empty whitelist means "nothing chosen yet", which GoCD shows
   // as everything rather than as an empty dashboard.
   const byName =
-    !blacklist && listed.size === 0 ? () => true : (name) => (blacklist ? !listed.has(name) : listed.has(name));
+    !blacklist && listed.size === 0
+      ? () => true
+      : (name) => (blacklist ? !listed.has(name) : listed.has(name));
 
   // Views can also pin a status, the way the web dashboard's tabs do.
-  const wanted = new Set((definition.state || []).map((s) => String(s).toLowerCase()));
+  const wanted = new Set(
+    (definition.state || []).map((s) => String(s).toLowerCase()),
+  );
   const byState = (pipeline) => {
     if (wanted.size === 0) return true;
     const status = pipelineStatus(pipeline);
-    if (wanted.has('failing') && status === 'Failed') return true;
-    if (wanted.has('building') && status === 'Building') return true;
-    if (wanted.has('paused') && pipeline.pause_info?.paused) return true;
+    if (wanted.has("failing") && status === "Failed") return true;
+    if (wanted.has("building") && status === "Building") return true;
+    if (wanted.has("paused") && pipeline.pause_info?.paused) return true;
     return false;
   };
 
   const keptPipelines = pipelines.filter((p) => byName(p.name) && byState(p));
   const kept = new Set(keptPipelines.map((p) => p.name));
   const keptGroups = groups
-    .map((group) => ({ ...group, pipelines: (group.pipelines || []).filter((n) => kept.has(n)) }))
+    .map((group) => ({
+      ...group,
+      pipelines: (group.pipelines || []).filter((n) => kept.has(n)),
+    }))
     .filter((group) => group.pipelines.length > 0);
 
   return { groups: keptGroups, pipelines: keptPipelines };
@@ -321,7 +356,12 @@ export function applyView({ groups, pipelines }, definition) {
  * then falls back to the cache as it always did.
  */
 async function retryUnfiltered(api, serverView, firstError) {
-  if (!serverView || firstError?.kind === 'network' || firstError?.kind === 'auth') return null;
+  if (
+    !serverView ||
+    firstError?.kind === "network" ||
+    firstError?.kind === "auth"
+  )
+    return null;
 
   const definitions = await getViewDefinitions();
   if (!definitions.some((view) => view.name === serverView)) return null;
@@ -370,9 +410,11 @@ async function viewDefinition(api, name) {
  */
 async function setBadge({ pipelines = null, offline = false } = {}) {
   if (offline) {
-    await chrome.action.setBadgeText({ text: '!' });
-    await chrome.action.setBadgeBackgroundColor({ color: '#B45309' });
-    await chrome.action.setTitle({ title: 'GoCD Lens - showing cached data, cannot reach GoCD' });
+    await chrome.action.setBadgeText({ text: "!" });
+    await chrome.action.setBadgeBackgroundColor({ color: "#B45309" });
+    await chrome.action.setTitle({
+      title: "GoCD Lens - showing cached data, cannot reach GoCD",
+    });
     return;
   }
   if (!pipelines) return;
@@ -387,12 +429,12 @@ async function setBadge({ pipelines = null, offline = false } = {}) {
   let label = null;
   let names = null;
   switch (settings.badgeSource) {
-    case 'watched':
-      label = 'watching';
+    case "watched":
+      label = "watching";
       names = new Set(watched);
       break;
-    case 'starred':
-      label = 'starred';
+    case "starred":
+      label = "starred";
       names = new Set(favorites);
       break;
     // 'view', and anything an older profile might still hold.
@@ -403,14 +445,16 @@ async function setBadge({ pipelines = null, offline = false } = {}) {
   // An explicit choice with an empty list should say so rather than silently
   // widening to every pipeline on the server.
   if (names && names.size === 0) {
-    await chrome.action.setBadgeText({ text: '' });
+    await chrome.action.setBadgeText({ text: "" });
     await chrome.action.setTitle({
-      title: `GoCD Lens - nothing ${label} yet. Press the ${label === 'watching' ? 'bell' : 'star'} on a pipeline.`,
+      title: `GoCD Lens - nothing ${label} yet. Press the ${label === "watching" ? "bell" : "star"} on a pipeline.`,
     });
     return;
   }
 
-  const inSource = names ? pipelines.filter((p) => names.has(p.name)) : pipelines;
+  const inSource = names
+    ? pipelines.filter((p) => names.has(p.name))
+    : pipelines;
 
   // A search typed into the popup narrows the badge too, so the toolbar agrees
   // with the list underneath it instead of describing a set you have just
@@ -423,10 +467,12 @@ async function setBadge({ pipelines = null, offline = false } = {}) {
     : inSource;
   const unseen = names && !needle ? names.size - inSource.length : 0;
 
-  const failing = counted.filter((p) => pipelineStatus(p) === 'Failed').length;
+  const failing = counted.filter((p) => pipelineStatus(p) === "Failed").length;
   // A run parked at a manual approval gate rolls up to Passed, not Building,
   // so it correctly does not appear here.
-  const running = counted.filter((p) => pipelineStatus(p) === 'Building').length;
+  const running = counted.filter(
+    (p) => pipelineStatus(p) === "Building",
+  ).length;
 
   // Running wins over failing.
   //
@@ -438,20 +484,36 @@ async function setBadge({ pipelines = null, offline = false } = {}) {
   // With nothing running, the failure count is the next most useful thing.
   if (running > 0) {
     await chrome.action.setBadgeText({ text: String(running) });
-    await chrome.action.setBadgeBackgroundColor({ color: '#2563EB' });
+    await chrome.action.setBadgeBackgroundColor({ color: "#2563EB" });
   } else if (failing > 0) {
     await chrome.action.setBadgeText({ text: String(failing) });
-    await chrome.action.setBadgeBackgroundColor({ color: '#DC2626' });
+    await chrome.action.setBadgeBackgroundColor({ color: "#DC2626" });
   } else {
-    await chrome.action.setBadgeText({ text: '' });
+    await chrome.action.setBadgeText({ text: "" });
   }
 
   await chrome.action.setTitle({
-    title: badgeTooltip({ failing, running, counted, label, unseen, settings, needle }),
+    title: badgeTooltip({
+      failing,
+      running,
+      counted,
+      label,
+      unseen,
+      settings,
+      needle,
+    }),
   });
 }
 
-function badgeTooltip({ failing, running, counted, label, unseen, settings, needle }) {
+function badgeTooltip({
+  failing,
+  running,
+  counted,
+  label,
+  unseen,
+  settings,
+  needle,
+}) {
   // Said out loud, because a badge counting a subset without saying so is the
   // mistake the `auto` source was removed for.
   const of = needle
@@ -460,14 +522,16 @@ function badgeTooltip({ failing, running, counted, label, unseen, settings, need
       ? `of ${counted.length + unseen} ${label}`
       : settings.activeView
         ? `in ${BUILTIN_VIEWS[settings.activeView]?.label ?? settings.activeView}`
-        : 'across every pipeline';
+        : "across every pipeline";
 
   const parts = [];
   if (running) parts.push(`${running} running`);
   if (failing) parts.push(`${failing} failing`);
 
-  const summary = parts.length ? `${parts.join(', ')} ${of}` : `nothing failing or running ${of}`;
-  const caveat = unseen > 0 ? ` (${unseen} not in the current view)` : '';
+  const summary = parts.length
+    ? `${parts.join(", ")} ${of}`
+    : `nothing failing or running ${of}`;
+  const caveat = unseen > 0 ? ` (${unseen} not in the current view)` : "";
   return `GoCD Lens - ${summary}${caveat}`;
 }
 
@@ -501,20 +565,22 @@ async function announceChanges(pipelines, { silent = false } = {}) {
 
     // Older builds stored a bare status string; read both shapes.
     const before = previous[pipeline.name];
-    const wasStatus = typeof before === 'string' ? before : before?.status;
-    const wasCounter = typeof before === 'string' ? null : (before?.counter ?? null);
+    const wasStatus = typeof before === "string" ? before : before?.status;
+    const wasCounter =
+      typeof before === "string" ? null : (before?.counter ?? null);
     if (!wasStatus) continue;
 
-    const newRun = counter != null && wasCounter != null && counter !== wasCounter;
-    const running = status === 'Building' || status === 'Scheduled';
-    const wasRunning = wasStatus === 'Building' || wasStatus === 'Scheduled';
+    const newRun =
+      counter != null && wasCounter != null && counter !== wasCounter;
+    const running = status === "Building" || status === "Scheduled";
+    const wasRunning = wasStatus === "Building" || wasStatus === "Scheduled";
 
     if (watched.has(pipeline.name)) {
       if (running && (!wasRunning || newRun)) {
-        events.push({ pipeline: pipeline.name, kind: 'started', counter });
+        events.push({ pipeline: pipeline.name, kind: "started", counter });
       } else if (
         !running &&
-        status !== 'Unknown' &&
+        status !== "Unknown" &&
         // Finished while we were watching, or finished a run we never saw
         // start, or simply came back with a different answer than last time --
         // a stage re-run keeps the same counter but changes the outcome.
@@ -522,7 +588,7 @@ async function announceChanges(pipelines, { silent = false } = {}) {
       ) {
         events.push({
           pipeline: pipeline.name,
-          kind: 'finished',
+          kind: "finished",
           status,
           counter,
           stage: failedStage(pipeline),
@@ -536,10 +602,10 @@ async function announceChanges(pipelines, { silent = false } = {}) {
     if (wasStatus === status) continue;
     if (!settings.notifyStarred || !favorites.has(pipeline.name)) continue;
 
-    if (status === 'Failed') {
-      events.push({ pipeline: pipeline.name, kind: 'failed' });
-    } else if (wasStatus === 'Failed' && status === 'Passed') {
-      events.push({ pipeline: pipeline.name, kind: 'recovered' });
+    if (status === "Failed") {
+      events.push({ pipeline: pipeline.name, kind: "failed" });
+    } else if (wasStatus === "Failed" && status === "Passed") {
+      events.push({ pipeline: pipeline.name, kind: "recovered" });
     }
   }
 
@@ -561,7 +627,7 @@ async function announceChanges(pipelines, { silent = false } = {}) {
 /** Which stage went red, so the notification says where to look. */
 function failedStage(pipeline) {
   const stages = pipeline._embedded?.instances?.[0]?._embedded?.stages || [];
-  return stages.find((stage) => stageStatus(stage) === 'Failed')?.name || null;
+  return stages.find((stage) => stageStatus(stage) === "Failed")?.name || null;
 }
 
 const SOUND_RANK = { start: 0, success: 1, failure: 2 };
@@ -573,38 +639,39 @@ function louder(current, candidate) {
 }
 
 function notificationFor(event) {
-  const run = event.counter ? ` #${event.counter}` : '';
+  const run = event.counter ? ` #${event.counter}` : "";
   const base = {
-    type: 'basic',
-    iconUrl: chrome.runtime.getURL('icons/icon128.png'),
+    type: "basic",
+    iconUrl: chrome.runtime.getURL("icons/icon128.png"),
   };
 
   switch (event.kind) {
-    case 'started':
+    case "started":
       return {
-        sound: 'start',
+        sound: "start",
         options: {
           ...base,
-          title: 'Started',
+          title: "Started",
           message: `${event.pipeline}${run} is running.`,
           priority: 0,
         },
       };
 
-    case 'finished': {
-      const passed = event.status === 'Passed';
-      const cancelled = event.status === 'Cancelled';
+    case "finished": {
+      const passed = event.status === "Passed";
+      const cancelled = event.status === "Cancelled";
       let message;
       if (passed) message = `${event.pipeline}${run} finished. No failures.`;
       else if (cancelled) message = `${event.pipeline}${run} was cancelled.`;
-      else if (event.stage) message = `${event.pipeline}${run} failed at the ${event.stage} stage.`;
+      else if (event.stage)
+        message = `${event.pipeline}${run} failed at the ${event.stage} stage.`;
       else message = `${event.pipeline}${run} finished with failures.`;
 
       return {
-        sound: passed ? 'success' : 'failure',
+        sound: passed ? "success" : "failure",
         options: {
           ...base,
-          title: passed ? 'Passed' : cancelled ? 'Cancelled' : 'Failed',
+          title: passed ? "Passed" : cancelled ? "Cancelled" : "Failed",
           message,
           // A failure stays on screen until it is acknowledged; a pass does not
           // need to interrupt anyone twice.
@@ -614,16 +681,26 @@ function notificationFor(event) {
       };
     }
 
-    case 'recovered':
+    case "recovered":
       return {
-        sound: 'success',
-        options: { ...base, title: 'Back to green', message: `${event.pipeline} is passing again.`, priority: 0 },
+        sound: "success",
+        options: {
+          ...base,
+          title: "Back to green",
+          message: `${event.pipeline} is passing again.`,
+          priority: 0,
+        },
       };
 
     default:
       return {
-        sound: 'failure',
-        options: { ...base, title: 'Pipeline failed', message: `${event.pipeline} just turned red.`, priority: 2 },
+        sound: "failure",
+        options: {
+          ...base,
+          title: "Pipeline failed",
+          message: `${event.pipeline} just turned red.`,
+          priority: 2,
+        },
       };
   }
 }
@@ -638,14 +715,15 @@ function notificationFor(event) {
 let offscreenReady = null;
 
 async function ensureOffscreen() {
-  if (!chrome.offscreen) throw new Error('offscreen documents are unavailable');
+  if (!chrome.offscreen) throw new Error("offscreen documents are unavailable");
   if (await chrome.offscreen.hasDocument()) return;
   if (!offscreenReady) {
     offscreenReady = chrome.offscreen
       .createDocument({
-        url: 'src/offscreen/offscreen.html',
-        reasons: ['AUDIO_PLAYBACK'],
-        justification: 'Play a short chime when a watched pipeline starts or finishes.',
+        url: "src/offscreen/offscreen.html",
+        reasons: ["AUDIO_PLAYBACK"],
+        justification:
+          "Play a short chime when a watched pipeline starts or finishes.",
       })
       .finally(() => {
         offscreenReady = null;
@@ -655,7 +733,7 @@ async function ensureOffscreen() {
 }
 
 async function playSound(name, settings) {
-  if (!settings.sound) return { ok: false, error: 'sound is switched off' };
+  if (!settings.sound) return { ok: false, error: "sound is switched off" };
   try {
     await ensureOffscreen();
     return await dispatchSound({ name });
@@ -675,19 +753,19 @@ async function playSound(name, settings) {
  * could silently do nothing.
  */
 async function dispatchSound(payload, attempts = 6) {
-  let last = 'the audio page never answered';
+  let last = "the audio page never answered";
 
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     try {
       const response = await chrome.runtime.sendMessage({
-        target: 'offscreen',
-        type: 'playSound',
+        target: "offscreen",
+        type: "playSound",
         payload,
       });
       // A reply of any shape means the page was listening, so stop retrying:
       // a refusal from the autoplay policy will not improve with another go.
       if (response) return response;
-      last = 'the audio page answered with nothing';
+      last = "the audio page answered with nothing";
     } catch (err) {
       last = err?.message || String(err);
     }
@@ -709,9 +787,9 @@ async function diagnose() {
   const api = new GoCdClient(conn);
 
   const probes = [
-    { id: 'version', label: 'GoCD API', run: () => api.version() },
-    { id: 'identity', label: 'Your identity', run: () => api.currentUser() },
-    { id: 'dashboard', label: 'Pipeline data', run: () => api.dashboard({}) },
+    { id: "version", label: "GoCD API", run: () => api.version() },
+    { id: "identity", label: "Your identity", run: () => api.currentUser() },
+    { id: "dashboard", label: "Pipeline data", run: () => api.dashboard({}) },
   ];
 
   const results = [];
@@ -742,21 +820,23 @@ async function diagnose() {
   const startedAt = performance.now();
   try {
     const response = await fetch(`${api.base}/`, {
-      credentials: conn.authMode === 'session' ? 'include' : 'omit',
-      cache: 'no-store',
-      redirect: 'follow',
+      credentials: conn.authMode === "session" ? "include" : "omit",
+      cache: "no-store",
+      redirect: "follow",
     });
     results.push({
-      id: 'webui',
-      label: 'GoCD web UI',
+      id: "webui",
+      label: "GoCD web UI",
       ok: response.ok,
       ms: Math.round(performance.now() - startedAt),
-      detail: response.ok ? `HTTP ${response.status}` : `HTTP ${response.status} - the web UI is unhappy, the API above is what matters here`,
+      detail: response.ok
+        ? `HTTP ${response.status}`
+        : `HTTP ${response.status} - the web UI is unhappy, the API above is what matters here`,
     });
   } catch (err) {
     results.push({
-      id: 'webui',
-      label: 'GoCD web UI',
+      id: "webui",
+      label: "GoCD web UI",
       ok: false,
       ms: Math.round(performance.now() - startedAt),
       detail: String(err?.message || err),
@@ -767,10 +847,12 @@ async function diagnose() {
 }
 
 function summariseProbe(id, data) {
-  if (id === 'version') return `GoCD ${data?.version || 'unknown'}`;
-  if (id === 'identity') return data?.login_name ? `signed in as ${data.login_name}` : 'signed in';
-  if (id === 'dashboard') return `${(data?.pipelines || []).length} pipelines visible`;
-  return 'ok';
+  if (id === "version") return `GoCD ${data?.version || "unknown"}`;
+  if (id === "identity")
+    return data?.login_name ? `signed in as ${data.login_name}` : "signed in";
+  if (id === "dashboard")
+    return `${(data?.pipelines || []).length} pipelines visible`;
+  return "ok";
 }
 
 /**
@@ -799,8 +881,8 @@ async function mergeKeptSecret(connection) {
   delete merged.keepExistingSecret;
   const existing = await getConnection();
   if (existing && existing.authMode === merged.authMode) {
-    if (merged.authMode === 'token') merged.token = existing.token;
-    if (merged.authMode === 'basic') merged.password = existing.password;
+    if (merged.authMode === "token") merged.token = existing.token;
+    if (merged.authMode === "basic") merged.password = existing.password;
   }
   return merged;
 }
@@ -814,16 +896,23 @@ async function mergeKeptSecret(connection) {
 const handlers = {
   async getState() {
     const conn = await getConnection();
-    const [settings, favorites, watched, cache, recent, expandedGroups, popupSearch] =
-      await Promise.all([
-        getSettings(),
-        getFavorites(),
-        getWatched(),
-        getCache(),
-        getRecent(),
-        getExpandedGroups(),
-        getPopupSearch(),
-      ]);
+    const [
+      settings,
+      favorites,
+      watched,
+      cache,
+      recent,
+      expandedGroups,
+      popupSearch,
+    ] = await Promise.all([
+      getSettings(),
+      getFavorites(),
+      getWatched(),
+      getCache(),
+      getRecent(),
+      getExpandedGroups(),
+      getPopupSearch(),
+    ]);
     // From cache, so a popup opens instantly and still works offline.
     const views = await getViewDefinitions();
     return {
@@ -845,7 +934,7 @@ const handlers = {
   },
 
   async setPopupSearch({ query }) {
-    await setPopupSearch(query || '');
+    await setPopupSearch(query || "");
     // Repainted from the cache rather than waiting for the next poll, or the
     // badge would lag the box you are typing into by a whole interval.
     const cache = await getCache();
@@ -866,9 +955,12 @@ const handlers = {
       // Some GoCD deployments restrict /api/current_user; not fatal.
     }
     await setConnection(merged);
-    await chrome.storage.local.remove(['dashboardCache', 'lastSeenStatus']);
+    await chrome.storage.local.remove(["dashboardCache", "lastSeenStatus"]);
     await ensureAlarm();
-    return { version: version?.version || null, user: user?.login_name || null };
+    return {
+      version: version?.version || null,
+      user: user?.login_name || null,
+    };
   },
 
   async testConnection({ connection }) {
@@ -884,15 +976,16 @@ const handlers = {
 
   async disconnect() {
     await clearConnection();
-    await chrome.action.setBadgeText({ text: '' });
+    await chrome.action.setBadgeText({ text: "" });
     return { ok: true };
   },
 
   async updateSettings({ patch }) {
     const settings = await setSettings(patch);
     // Either of these changes what the alarm should be, or whether there is one.
-    if ('notifyWhenClosed' in patch || 'backgroundMinutes' in patch) await ensureAlarm();
-    if ('badgeSource' in patch) {
+    if ("notifyWhenClosed" in patch || "backgroundMinutes" in patch)
+      await ensureAlarm();
+    if ("badgeSource" in patch) {
       const cache = await getCache();
       if (cache) await setBadge({ pipelines: cache.pipelines });
     }
@@ -920,7 +1013,7 @@ const handlers = {
       const level = await chrome.notifications.getPermissionLevel();
       return { level };
     } catch (err) {
-      return { level: 'unknown', error: err?.message || String(err) };
+      return { level: "unknown", error: err?.message || String(err) };
     }
   },
 
@@ -928,16 +1021,16 @@ const handlers = {
   async testNotification() {
     const id = `test:${Date.now()}`;
     await chrome.notifications.create(id, {
-      type: 'basic',
-      iconUrl: chrome.runtime.getURL('icons/icon128.png'),
-      title: 'GoCD Lens works',
-      message: 'This is what a pipeline notification will look like.',
+      type: "basic",
+      iconUrl: chrome.runtime.getURL("icons/icon128.png"),
+      title: "GoCD Lens works",
+      message: "This is what a pipeline notification will look like.",
       priority: 2,
     });
     // Deliberately not forcing sound on: a test should show what a real one
     // will do, and a real one is silent when chimes are off.
     const settings = await getSettings();
-    await playSound('success', settings);
+    await playSound("success", settings);
     return { ok: true, id };
   },
 
@@ -992,7 +1085,14 @@ const handlers = {
 
   async consoleLog({ pipeline, counter, stage, stageCounter, job, startLine }) {
     const api = await client();
-    const text = await api.consoleLog(pipeline, counter, stage, stageCounter, job, startLine);
+    const text = await api.consoleLog(
+      pipeline,
+      counter,
+      stage,
+      stageCounter,
+      job,
+      startLine,
+    );
     return { text };
   },
 
@@ -1022,8 +1122,10 @@ const handlers = {
 
   async rerun({ pipeline, counter, stage, stageCounter, failedOnly, jobs }) {
     const api = await client();
-    if (jobs?.length) await api.rerunSelectedJobs(pipeline, counter, stage, stageCounter, jobs);
-    else if (failedOnly) await api.rerunFailedJobs(pipeline, counter, stage, stageCounter);
+    if (jobs?.length)
+      await api.rerunSelectedJobs(pipeline, counter, stage, stageCounter, jobs);
+    else if (failedOnly)
+      await api.rerunFailedJobs(pipeline, counter, stage, stageCounter);
     else await api.rerunStage(pipeline, counter, stage);
     return { ok: true };
   },
@@ -1037,7 +1139,7 @@ const handlers = {
 
   async wipe() {
     await wipeEverything();
-    await chrome.action.setBadgeText({ text: '' });
+    await chrome.action.setBadgeText({ text: "" });
     return { ok: true };
   },
 };
@@ -1059,7 +1161,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({
         ok: false,
         error: describe(err),
-        kind: err instanceof GoCdError ? err.kind : 'unknown',
+        kind: err instanceof GoCdError ? err.kind : "unknown",
         status: err instanceof GoCdError ? err.status : 0,
       }),
     );

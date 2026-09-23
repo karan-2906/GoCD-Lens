@@ -4,18 +4,25 @@
  * here reaches into the DOM of a specific view.
  */
 
-import { el, send, toast, confirmDialog, explain, stageStrip } from '../common/ui.js';
+import {
+  el,
+  send,
+  toast,
+  confirmDialog,
+  explain,
+  stageStrip,
+} from "../common/ui.js";
 import {
   STATUS,
   pipelineStatus,
   timeAgo,
   matchScore,
   fuzzyMatch,
-} from '../lib/status.js';
+} from "../lib/status.js";
 
 export const state = {
   /** {kind: 'list'} or {kind: 'pipeline', name} */
-  route: { kind: 'list' },
+  route: { kind: "list" },
   connection: null,
   hasPermission: false,
   settings: null,
@@ -37,11 +44,11 @@ export const state = {
   fetchedAt: 0,
   stale: false,
   loadError: null,
-  search: '',
+  search: "",
   /** The sidebar's own box. It narrows the group list and nothing else. */
-  groupSearch: '',
+  groupSearch: "",
   /** 'all' | 'failing' | 'building' | 'paused' | 'favorites' */
-  filter: 'all',
+  filter: "all",
   group: null,
 };
 
@@ -71,8 +78,8 @@ const trail = [];
 const TRAIL_MAX = 10;
 
 export function navigate(route) {
-  if (route.kind === 'list') trail.length = 0;
-  else if (state.route.kind === 'pipeline' && state.route.name !== route.name) {
+  if (route.kind === "list") trail.length = 0;
+  else if (state.route.kind === "pipeline" && state.route.name !== route.name) {
     trail.push(state.route.name);
     if (trail.length > TRAIL_MAX) trail.shift();
   }
@@ -82,7 +89,7 @@ export function navigate(route) {
 /** Up one level: the pipeline that opened this one, else the list. */
 export function goBack() {
   const previous = trail.pop();
-  setRoute(previous ? { kind: 'pipeline', name: previous } : { kind: 'list' });
+  setRoute(previous ? { kind: "pipeline", name: previous } : { kind: "list" });
 }
 
 /** What `goBack()` would land on, so the button can say where it goes. */
@@ -96,14 +103,14 @@ export function backTarget() {
  * send the next back press to a pipeline the user has already left.
  */
 export function resetToList() {
-  state.route = { kind: 'list' };
+  state.route = { kind: "list" };
   trail.length = 0;
 }
 
 function setRoute(route) {
   state.route = route;
   rerender();
-  document.querySelector('.content')?.scrollTo({ top: 0 });
+  document.querySelector(".content")?.scrollTo({ top: 0 });
 }
 
 export function pipelineByName(name) {
@@ -111,7 +118,9 @@ export function pipelineByName(name) {
 }
 
 export function groupOf(name) {
-  return state.groups.find((g) => (g.pipelines || []).includes(name))?.name || null;
+  return (
+    state.groups.find((g) => (g.pipelines || []).includes(name))?.name || null
+  );
 }
 
 export function isFavorite(name) {
@@ -135,14 +144,15 @@ let refreshing = false;
  * comparisons rather than rebuilding a few thousand DOM nodes.
  */
 function fingerprint(data) {
-  if (data.etag) return `${data.view ?? ''}|${data.etag}`;
+  if (data.etag) return `${data.view ?? ""}|${data.etag}`;
 
   let hash = 0;
   for (const pipeline of data.pipelines || []) {
     const row = `${pipeline.name}:${pipelineStatus(pipeline)}:${pipeline.pause_info?.paused ? 1 : 0}`;
-    for (let i = 0; i < row.length; i += 1) hash = (hash * 31 + row.charCodeAt(i)) | 0;
+    for (let i = 0; i < row.length; i += 1)
+      hash = (hash * 31 + row.charCodeAt(i)) | 0;
   }
-  return `${data.view ?? ''}|${data.pipelines?.length ?? 0}|${hash}`;
+  return `${data.view ?? ""}|${data.pipelines?.length ?? 0}|${hash}`;
 }
 
 let lastFingerprint = null;
@@ -161,9 +171,9 @@ export async function refresh({ force = false, quiet = false, view } = {}) {
     // selection; sending null would mean "show me everything".
     const payload = { force };
     if (view !== undefined) payload.view = view;
-    const data = await send('refresh', payload);
+    const data = await send("refresh", payload);
     if (data.configured === false) {
-      state.loadError = 'not-configured';
+      state.loadError = "not-configured";
       return;
     }
     state.groups = data.groups || [];
@@ -183,7 +193,7 @@ export async function refresh({ force = false, quiet = false, view } = {}) {
     state.stale = true;
     state.loadError = explain(err);
     lastFingerprint = null; // an error changes what is on screen
-    if (!quiet) toast(state.loadError, { tone: 'error', timeout: 7000 });
+    if (!quiet) toast(state.loadError, { tone: "error", timeout: 7000 });
   } finally {
     refreshing = false;
     if (changed) rerender();
@@ -206,8 +216,8 @@ function repaintFreshness() {
 
 export function statusPill(status, { small = false } = {}) {
   const meta = STATUS[status] || STATUS.Unknown;
-  return el('span', {
-    class: `pill tone-${meta.tone}${small ? ' pill-sm' : ''}`,
+  return el("span", {
+    class: `pill tone-${meta.tone}${small ? " pill-sm" : ""}`,
     text: meta.label,
   });
 }
@@ -219,27 +229,27 @@ export function tone(status) {
 export { stageStrip };
 
 export function relativeTime(epochMillis) {
-  return el('span', {
-    class: 'faint',
+  return el("span", {
+    class: "faint",
     text: timeAgo(epochMillis),
-    title: epochMillis ? new Date(epochMillis).toLocaleString() : '',
+    title: epochMillis ? new Date(epochMillis).toLocaleString() : "",
   });
 }
 
 // --------------------------------------------------------------- actions
 
 export async function toggleStar(name) {
-  state.favorites = await send('toggleFavorite', { name });
+  state.favorites = await send("toggleFavorite", { name });
   rerender();
 }
 
 export async function toggleWatch(name) {
   const watching = !isWatched(name);
-  state.watched = await send('toggleWatched', { name });
+  state.watched = await send("toggleWatched", { name });
   rerender();
 
   if (!watching) {
-    toast(`No longer watching ${name}.`, { tone: 'info', timeout: 3000 });
+    toast(`No longer watching ${name}.`, { tone: "info", timeout: 3000 });
     return;
   }
 
@@ -249,26 +259,29 @@ export async function toggleWatch(name) {
   if (!state.settings?.notifyWhenClosed) {
     toast(
       `Watching ${name}, but you will only be told while a tab is open. Settings has a tick for "Notify me even when no dashboard tab is open".`,
-      { tone: 'warn', timeout: 9000 },
+      { tone: "warn", timeout: 9000 },
     );
     return;
   }
 
-  toast(`Watching ${name} -- you will be told when a run starts and when it finishes.`, {
-    tone: 'ok',
-    timeout: 3500,
-  });
+  toast(
+    `Watching ${name} -- you will be told when a run starts and when it finishes.`,
+    {
+      tone: "ok",
+      timeout: 3500,
+    },
+  );
 }
 
 /** Every action that changes something on the server asks first, then says what happened. */
 async function act(label, run) {
   try {
     await run();
-    toast(label, { tone: 'ok' });
+    toast(label, { tone: "ok" });
     setTimeout(() => refresh({ force: true, quiet: true }), 1200);
     return true;
   } catch (err) {
-    toast(explain(err), { tone: 'error', timeout: 8000 });
+    toast(explain(err), { tone: "error", timeout: 8000 });
     return false;
   }
 }
@@ -276,11 +289,11 @@ async function act(label, run) {
 export async function triggerPipeline(name) {
   const ok = await confirmDialog({
     title: `Run ${name}?`,
-    body: 'GoCD will schedule a new run using the latest materials.',
-    confirmLabel: 'Run it',
+    body: "GoCD will schedule a new run using the latest materials.",
+    confirmLabel: "Run it",
   });
   if (!ok) return;
-  return act(`Triggered ${name}`, () => send('trigger', { pipeline: name }));
+  return act(`Triggered ${name}`, () => send("trigger", { pipeline: name }));
 }
 
 export async function togglePause(pipeline) {
@@ -290,31 +303,36 @@ export async function togglePause(pipeline) {
       title: `Resume ${pipeline.name}?`,
       body: pipeline.pause_info?.pause_reason
         ? `It was paused because: ${pipeline.pause_info.pause_reason}`
-        : 'Scheduling will start again straight away.',
-      confirmLabel: 'Resume',
+        : "Scheduling will start again straight away.",
+      confirmLabel: "Resume",
     });
     if (!ok) return;
-    return act(`Resumed ${pipeline.name}`, () => send('unpause', { pipeline: pipeline.name }));
+    return act(`Resumed ${pipeline.name}`, () =>
+      send("unpause", { pipeline: pipeline.name }),
+    );
   }
 
-  const reason = el('input', {
-    type: 'text',
-    placeholder: 'Why? (everyone on this server will see it)',
+  const reason = el("input", {
+    type: "text",
+    placeholder: "Why? (everyone on this server will see it)",
     spellcheck: false,
   });
   const ok = await confirmDialog({
     title: `Pause ${pipeline.name}?`,
     body: el(
-      'div',
+      "div",
       {},
-      el('p', { class: 'modal-body', text: 'New runs stop being scheduled. Anything already running keeps going.' }),
+      el("p", {
+        class: "modal-body",
+        text: "New runs stop being scheduled. Anything already running keeps going.",
+      }),
       reason,
     ),
-    confirmLabel: 'Pause',
+    confirmLabel: "Pause",
   });
   if (!ok) return;
   return act(`Paused ${pipeline.name}`, () =>
-    send('pause', { pipeline: pipeline.name, cause: reason.value.trim() }),
+    send("pause", { pipeline: pipeline.name, cause: reason.value.trim() }),
   );
 }
 
@@ -322,12 +340,12 @@ export async function cancelStage({ pipeline, counter, stage, stageCounter }) {
   const ok = await confirmDialog({
     title: `Stop ${stage}?`,
     body: `This cancels the running stage in ${pipeline} #${counter}. Work already done is kept, but the run stops here.`,
-    confirmLabel: 'Stop it',
-    tone: 'danger',
+    confirmLabel: "Stop it",
+    tone: "danger",
   });
   if (!ok) return;
   return act(`Cancelled ${stage}`, () =>
-    send('cancelStage', { pipeline, counter, stage, stageCounter }),
+    send("cancelStage", { pipeline, counter, stage, stageCounter }),
   );
 }
 
@@ -347,29 +365,40 @@ export async function cancelStage({ pipeline, counter, stage, stageCounter }) {
  * "re-run the stage" means, and GoCD has its own operation for it rather than
  * treating it as a selection that happens to include everything.
  */
-export async function rerunStage({ pipeline, counter, stage, stageCounter, jobs = [], selected = null }) {
+export async function rerunStage({
+  pipeline,
+  counter,
+  stage,
+  stageCounter,
+  jobs = [],
+  selected = null,
+}) {
   const runnable = jobs.filter((job) => job?.name);
   const picked = selected ?? [];
   const whole = picked.length === 0 || picked.length === runnable.length;
 
   const named =
-    picked.length <= 3 ? picked.join(', ') : `${picked.length} of ${runnable.length} jobs`;
+    picked.length <= 3
+      ? picked.join(", ")
+      : `${picked.length} of ${runnable.length} jobs`;
 
   const ok = await confirmDialog({
-    title: whole ? `Re-run ${stage}?` : `Re-run ${picked.length === 1 ? 'this job' : 'these jobs'}?`,
+    title: whole
+      ? `Re-run ${stage}?`
+      : `Re-run ${picked.length === 1 ? "this job" : "these jobs"}?`,
     body: whole
-      ? 'Every job in this stage runs again.'
+      ? "Every job in this stage runs again."
       : `${named} run again. The rest keep their existing result.`,
-    confirmLabel: whole ? 'Re-run' : 'Re-run selected',
+    confirmLabel: whole ? "Re-run" : "Re-run selected",
   });
   if (!ok) return;
 
   const label = whole
     ? `Re-running ${stage}`
-    : `Re-running ${picked.length} job${picked.length === 1 ? '' : 's'} in ${stage}`;
+    : `Re-running ${picked.length} job${picked.length === 1 ? "" : "s"} in ${stage}`;
 
   return act(label, () =>
-    send('rerun', {
+    send("rerun", {
       pipeline,
       counter,
       stage,
@@ -381,10 +410,10 @@ export async function rerunStage({ pipeline, counter, stage, stageCounter, jobs 
 
 export async function openInGoCd(kind, parts) {
   try {
-    const { url } = await send('webUrl', { kind, parts });
+    const { url } = await send("webUrl", { kind, parts });
     chrome.tabs.create({ url });
   } catch (err) {
-    toast(explain(err), { tone: 'error' });
+    toast(explain(err), { tone: "error" });
   }
 }
 
@@ -394,8 +423,8 @@ export function counts() {
   const all = state.pipelines;
   return {
     all: all.length,
-    failing: all.filter((p) => pipelineStatus(p) === 'Failed').length,
-    building: all.filter((p) => pipelineStatus(p) === 'Building').length,
+    failing: all.filter((p) => pipelineStatus(p) === "Failed").length,
+    building: all.filter((p) => pipelineStatus(p) === "Building").length,
     paused: all.filter((p) => p.pause_info?.paused).length,
     favorites: all.filter((p) => isFavorite(p.name)).length,
     watched: all.filter((p) => isWatched(p.name)).length,
@@ -422,7 +451,8 @@ export function matchingPipelines() {
   const query = state.search.trim();
   const groupByPipeline = new Map();
   for (const group of state.groups) {
-    for (const name of group.pipelines || []) groupByPipeline.set(name, group.name);
+    for (const name of group.pipelines || [])
+      groupByPipeline.set(name, group.name);
   }
 
   const inGroup = state.group
@@ -456,7 +486,10 @@ export function matchingPipelines() {
   }
 
   matches.sort((a, b) => {
-    if (query) return a.score - b.score || a.pipeline.name.localeCompare(b.pipeline.name);
+    if (query)
+      return (
+        a.score - b.score || a.pipeline.name.localeCompare(b.pipeline.name)
+      );
     const rankA = STATUS[pipelineStatus(a.pipeline)].rank;
     const rankB = STATUS[pipelineStatus(b.pipeline)].rank;
     return rankA - rankB || a.pipeline.name.localeCompare(b.pipeline.name);
@@ -474,7 +507,7 @@ export function matchingPipelines() {
 export function groupedMatches(matches) {
   const sections = new Map();
   for (const match of matches) {
-    const key = match.group || 'Ungrouped';
+    const key = match.group || "Ungrouped";
     if (!sections.has(key)) sections.set(key, []);
     sections.get(key).push(match);
   }
@@ -487,7 +520,8 @@ export function groupedMatches(matches) {
     }
   }
   // Anything whose group the dashboard did not describe still has to appear.
-  for (const [name, groupMatches] of sections) ordered.push({ name, matches: groupMatches });
+  for (const [name, groupMatches] of sections)
+    ordered.push({ name, matches: groupMatches });
   return ordered;
 }
 
@@ -507,7 +541,9 @@ export function visibleGroups() {
 
   const rows = [];
   for (const group of state.groups) {
-    const members = (group.pipelines || []).map((n) => byName.get(n)).filter(Boolean);
+    const members = (group.pipelines || [])
+      .map((n) => byName.get(n))
+      .filter(Boolean);
     if (members.length === 0) continue;
     const score = query ? matchScore(query, group.name) : 0;
     if (score === null) continue;
@@ -534,12 +570,12 @@ export function visibleGroups() {
  */
 export function rememberedNames() {
   if (state.pipelines.length > 0) return [];
-  if (!state.loadError || state.loadError === 'not-configured') return [];
+  if (!state.loadError || state.loadError === "not-configured") return [];
 
   const names =
-    state.activeView === 'local:starred'
+    state.activeView === "local:starred"
       ? state.favorites
-      : state.activeView === 'local:watched'
+      : state.activeView === "local:watched"
         ? state.watched
         : [];
 
@@ -567,27 +603,29 @@ export async function toggleGroupCollapsed(name) {
     : [...state.expandedGroups, name];
   state.expandedGroups = next;
   rerender();
-  state.expandedGroups = await send('setExpandedGroups', { names: next });
+  state.expandedGroups = await send("setExpandedGroups", { names: next });
 }
 
 export async function setAllGroupsCollapsed(collapsed) {
-  const names = collapsed ? [] : groupedMatches(matchingPipelines()).map((section) => section.name);
+  const names = collapsed
+    ? []
+    : groupedMatches(matchingPipelines()).map((section) => section.name);
   state.expandedGroups = names;
   rerender();
-  state.expandedGroups = await send('setExpandedGroups', { names });
+  state.expandedGroups = await send("setExpandedGroups", { names });
 }
 
 export function passesFilter(pipeline) {
   switch (state.filter) {
-    case 'failing':
-      return pipelineStatus(pipeline) === 'Failed';
-    case 'building':
-      return pipelineStatus(pipeline) === 'Building';
-    case 'paused':
+    case "failing":
+      return pipelineStatus(pipeline) === "Failed";
+    case "building":
+      return pipelineStatus(pipeline) === "Building";
+    case "paused":
       return Boolean(pipeline.pause_info?.paused);
-    case 'favorites':
+    case "favorites":
       return isFavorite(pipeline.name);
-    case 'watched':
+    case "watched":
       return isWatched(pipeline.name);
     default:
       return true;
@@ -603,7 +641,7 @@ export function passesFilter(pipeline) {
  */
 export async function loadViews() {
   try {
-    const { filters } = await send('views');
+    const { filters } = await send("views");
     state.views = filters || [];
     state.viewsAvailable = true;
   } catch {
@@ -628,7 +666,7 @@ export async function selectView(name, { resetContext = true } = {}) {
     // search did its job when it found the thing you are looking at -- taking
     // it back to the list would narrow the new view down to what you just left.
     // The sidebar box only ever filters, so it is never a leftover.
-    if (state.route.kind !== 'list') state.search = '';
+    if (state.route.kind !== "list") state.search = "";
     resetToList();
   }
   rerender();

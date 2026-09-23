@@ -19,4 +19,4 @@
 - [ ] No new dependency — this project has none, on purpose
 - [ ] Pages still do not call GoCD directly; requests go through the service worker
 - [ ] No `innerHTML`, no `eval`, no `chrome.storage.sync`
-- [ ] Comments explain *why* where the code looks odd but is deliberate
+- [ ] Comments explain _why_ where the code looks odd but is deliberate
