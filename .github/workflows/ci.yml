@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           # 22, not the 20 that package.json's `engines` claims: the test script
           # passes a quoted glob to `node --test`, and glob support landed in
