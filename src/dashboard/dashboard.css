@@ -911,36 +911,82 @@ body {
  * Compact enough to sit inside the stage header beside the status pill, which
  * the full-width form select this inherits from is not.
  */
+/*
+ * The two bits of text in the list toolbar. Both were `faint`, which is the
+ * colour for something you are meant to skip over -- wrong for a count that
+ * says how much is on screen, and wrong for the only word naming the control
+ * next to it. They read as labels now: dimmer than a heading, not background.
+ */
+.list-count,
 .sort-label {
   font-size: 12px;
-  color: var(--text-faint);
-  margin-right: 6px;
-}
-
-/* Sits in the list toolbar, so it matches the ghost button beside it rather
-   than the full-width form select it inherits from. */
-.sort-picker {
-  width: auto;
-  padding: 2px 4px 2px 8px;
-  margin-right: 6px;
-  font-size: 12px;
   font-weight: 560;
-  color: var(--text-faint);
-  background: transparent;
-  border-color: var(--border);
-  cursor: pointer;
+  color: var(--text-muted);
 }
 
+.sort-label {
+  margin-right: 6px;
+}
+
+/* A group's name is the heading for what is under it, not a count of it. */
+.list-count.is-group {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
+ * Two selects sit among buttons rather than in a form -- the sort picker in the
+ * list toolbar and the attempt picker in a stage header -- so they are sized and
+ * weighted like the ghost button beside them, not like the full-width field
+ * they inherit from.
+ *
+ * `appearance: none` is the load-bearing line. Chrome draws the native caret
+ * itself and ignores padding-right, so the caret sat hard against the text and
+ * the control read as a heavy bezel rather than as a button. Replacing it with
+ * a background chevron is the only way to inset it. Same inline data URI as the
+ * settings page: no request to make, nothing to go missing, and its grey is
+ * legible on both themes, which is why one colour serves both.
+ */
+.sort-picker,
 .attempt-picker {
   width: auto;
-  padding: 2px 4px 2px 8px;
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 4px 26px 4px 9px;
   font-size: 12px;
-  font-weight: 560;
-  color: var(--text-faint);
-  background: transparent;
-  border-color: var(--border);
+  font-weight: 540;
+  /* The value is the answer, so it reads at full strength; the word "Sort"
+     beside it is the faint one. */
+  color: var(--text);
+  background-color: transparent;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238b949e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
   cursor: pointer;
+  transition:
+    background-color var(--speed) ease,
+    border-color var(--speed) ease;
 }
+
+.sort-picker:hover,
+.attempt-picker:hover {
+  background-color: var(--surface-hover);
+  border-color: var(--border-strong);
+}
+
+.sort-picker {
+  margin-right: 2px;
+}
+
+/* The attempt picker keeps its own note; its styling is shared above. */
 
 .stage-actions {
   display: flex;

@@ -62,7 +62,11 @@ export function renderList(host) {
   const sections = groupedMatches(matches);
 
   // A single group is not a structure worth folding: there is nothing for it to
-  // be folded away from.
+  // be folded away from. The sort still belongs here though -- looking at one
+  // group's pipelines is exactly when the order of them matters -- so the
+  // toolbar comes along and only the collapse button stays behind.
+  host.append(listToolbar(sections));
+
   if (sections.length === 1) {
     if (!state.group)
       host.append(sectionHeader({ ...sections[0], alwaysOpen: true }));
@@ -70,36 +74,45 @@ export function renderList(host) {
     return;
   }
 
-  if (sections.length > 1) host.append(collapseAllBar(sections));
-
   for (const section of sections) {
     host.append(sectionHeader(section));
     if (!isGroupCollapsed(section.name)) host.append(grid(section.matches));
   }
 }
 
-function collapseAllBar(sections) {
+function listToolbar(sections) {
   const allCollapsed = sections.every((section) =>
     isGroupCollapsed(section.name),
   );
+  const many = sections.length > 1;
+
+  // Picking a group in the sidebar suppresses its section header, so the name
+  // would otherwise appear nowhere above the cards -- and "1 group" tells you
+  // something you just chose. Name what you are looking at instead.
+  const chosen = state.group && sections.length === 1 ? state.group : null;
+
   return el(
     "div",
     { class: "list-toolbar" },
     el("span", {
-      class: "faint",
-      text: `${sections.length} groups`,
+      class: chosen ? "list-count is-group" : "list-count",
+      text: chosen || `${sections.length} ${many ? "groups" : "group"}`,
+      title: chosen || "",
     }),
     el("span", { class: "spacer" }),
     ...sortControl(),
-    el(
-      "button",
-      {
-        class: "btn btn-sm btn-ghost",
-        onclick: () => setAllGroupsCollapsed(!allCollapsed),
-      },
-      icon(allCollapsed ? "chevron-down" : "chevron-right", { size: 12 }),
-      allCollapsed ? "Expand all" : "Collapse all",
-    ),
+    // Nothing to collapse when there is one section, and nothing to collapse it
+    // away from either.
+    many &&
+      el(
+        "button",
+        {
+          class: "btn btn-sm btn-ghost",
+          onclick: () => setAllGroupsCollapsed(!allCollapsed),
+        },
+        icon(allCollapsed ? "chevron-down" : "chevron-right", { size: 12 }),
+        allCollapsed ? "Expand all" : "Collapse all",
+      ),
   );
 }
 
