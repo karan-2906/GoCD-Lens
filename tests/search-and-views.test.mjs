@@ -47,6 +47,9 @@ const {
   visibleGroups,
   rememberedNames,
   selectView,
+  groupedMatches,
+  sortId,
+  SORTS,
 } = await import("../src/dashboard/state.js");
 
 function pipeline(name, status, { paused = false } = {}) {
@@ -91,13 +94,21 @@ const names = () => matchingPipelines().map((m) => m.pipeline.name);
 
 // --------------------------------------------------------------- searching
 
-test("with no search, everything is listed worst-first", () => {
-  // Red before running before green, so the thing that needs you is at the top.
-  assert.deepEqual(names(), [
-    "web-app-deploy",
-    "api-build-test",
-    "payments-nightly",
-    "web-app-build-prod",
+test("with no search and no sort chosen, each group keeps GoCD's own order", () => {
+  // This used to be worst-first, red before running before green. The list now
+  // opens in the order each pipeline group is configured in on the server --
+  // the order GoCD's own dashboard shows -- and "what needs me" is a sort and a
+  // filter chip away rather than something the list assumes you wanted.
+  //
+  // Asserted per group on purpose: a position in the group is only meaningful
+  // once the matches are split back into groups, which is how they are drawn.
+  const sections = groupedMatches(matchingPipelines()).map((s) => [
+    s.name,
+    s.matches.map((m) => m.pipeline.name),
+  ]);
+  assert.deepEqual(sections, [
+    ["core", ["web-app-build-prod", "web-app-deploy"]],
+    ["platform", ["api-build-test", "payments-nightly"]],
   ]);
 });
 
@@ -416,4 +427,131 @@ test("the search box still narrows the names during an outage", () => {
 
   state.search = "zzz";
   assert.deepEqual(rememberedNames(), []);
+});
+
+// --------------------------------------------------------------- sorting
+
+/**
+ * The sort orders pipelines *inside* a group. Group order is never touched,
+ * because it is configured on the server and people navigate by it.
+ */
+function sortedNames() {
+  return matchingPipelines().map((m) => m.pipeline.name);
+}
+
+test("the default is GoCD's own order, and it is the first entry in the picker", () => {
+  state.settings = undefined;
+  assert.equal(sortId(), "config", "no stored preference means GoCD's order");
+  assert.equal(
+    Object.keys(SORTS)[0],
+    sortId(),
+    "the default must be the first option, or the picker opens on something else",
+  );
+});
+
+test("as-configured follows the group's own order, not the alphabet", () => {
+  // core lists deploy before build-prod; platform lists nightly before build.
+  state.groups = [
+    { name: "core", pipelines: ["web-app-deploy", "web-app-build-prod"] },
+    { name: "platform", pipelines: ["payments-nightly", "api-build-test"] },
+  ];
+  state.settings = { sort: "config" };
+
+  const order = sortedNames();
+  assert.ok(
+    order.indexOf("web-app-deploy") < order.indexOf("web-app-build-prod"),
+    "the configured order inside core must be kept",
+  );
+  assert.ok(
+    order.indexOf("payments-nightly") < order.indexOf("api-build-test"),
+    "and inside platform",
+  );
+});
+
+test("an unknown stored sort falls back rather than emptying the list", () => {
+  state.settings = { sort: "by-vibes" };
+  assert.equal(sortId(), "config");
+  assert.equal(sortedNames().length, 4);
+});
+
+test("each status sort lifts only the status it names", () => {
+  // web-app-deploy Failed, api-build-test Building, the other two Passed.
+  state.settings = { sort: "failures" };
+  assert.equal(sortedNames()[0], "web-app-deploy");
+
+  state.settings = { sort: "running" };
+  assert.equal(sortedNames()[0], "api-build-test");
+
+  state.settings = { sort: "passing" };
+  assert.deepEqual(sortedNames().slice(0, 2), [
+    "payments-nightly",
+    "web-app-build-prod",
+  ]);
+});
+
+test("a status sort leaves everything it did not name alphabetical", () => {
+  // Naming one status must not smuggle in a ranking of the other four.
+  state.settings = { sort: "failures" };
+  assert.deepEqual(sortedNames(), [
+    "web-app-deploy", // the one Failed
+    "api-build-test",
+    "payments-nightly",
+    "web-app-build-prod",
+  ]);
+});
+
+test("sorting by name ignores status entirely", () => {
+  state.settings = { sort: "name" };
+  assert.deepEqual(sortedNames(), [
+    "api-build-test",
+    "payments-nightly",
+    "web-app-build-prod",
+    "web-app-deploy",
+  ]);
+});
+
+test("sorting by latest run puts the newest first and the never-run last", () => {
+  state.settings = { sort: "recent" };
+  const now = Date.now();
+  const at = (name, ms) => {
+    state.pipelines.find(
+      (p) => p.name === name,
+    )._embedded.instances[0].scheduled_at = ms;
+  };
+  at("web-app-build-prod", now - 60_000);
+  at("api-build-test", now - 3_600_000);
+  at("web-app-deploy", now - 86_400_000);
+  // Never run: no timestamp to offer at all.
+  state.pipelines.find(
+    (p) => p.name === "payments-nightly",
+  )._embedded.instances = [];
+
+  assert.deepEqual(sortedNames(), [
+    "web-app-build-prod",
+    "api-build-test",
+    "web-app-deploy",
+    "payments-nightly",
+  ]);
+});
+
+test("a search is ordered by relevance, whatever the sort says", () => {
+  // Enter opens the first result, so a sort that outranked the best match would
+  // send you to a pipeline you did not search for.
+  state.search = "wabp";
+  for (const id of Object.keys(SORTS)) {
+    state.settings = { sort: id };
+    assert.equal(
+      sortedNames()[0],
+      "web-app-build-prod",
+      `sort ${id} overrode relevance`,
+    );
+  }
+});
+
+test("every sort is a real option with a label, so the picker cannot go blank", () => {
+  for (const [id, sort] of Object.entries(SORTS)) {
+    assert.ok(sort.label?.length > 0, `${id} has no label`);
+    assert.equal(typeof sort.compare, "function");
+  }
+  assert.ok(SORTS[sortId()], "the fallback id must itself be an option");
 });

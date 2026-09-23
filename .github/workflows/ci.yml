@@ -29,5 +29,10 @@ jobs:
       - name: Run the suite
         run: npm test
 
+      # Authoritative: the pre-commit hook skips this when it cannot reach the
+      # registry, so CI is the place it always runs.
+      - name: Check formatting
+        run: npm run format:check
+
       - name: Check the package builds
         run: npm run package

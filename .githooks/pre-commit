@@ -26,3 +26,24 @@ if ! npm test --silent >/tmp/gocd-lens-pre-commit.log 2>&1; then
 fi
 
 echo "pre-commit: tests passed."
+
+# Formatting is checked second because the suite is instant and needs no
+# network, while this fetches prettier through npx -- there is no local install
+# by design, this repository has no dependencies. So an offline commit says so
+# and carries on rather than being blocked by a package download. CI runs the
+# same check with no way out, which is where it is authoritative.
+if ! npx --yes prettier@3.9.9 --version >/dev/null 2>&1; then
+  echo "pre-commit: prettier unavailable (offline?); skipping the format check." >&2
+  exit 0
+fi
+
+echo "pre-commit: checking formatting..."
+if ! npm run --silent format:check >/tmp/gocd-lens-pre-commit-fmt.log 2>&1; then
+  echo >&2
+  tail -20 /tmp/gocd-lens-pre-commit-fmt.log >&2
+  echo >&2
+  echo "pre-commit: formatting differs - run 'npm run format' and stage the result." >&2
+  exit 1
+fi
+
+echo "pre-commit: formatting ok."

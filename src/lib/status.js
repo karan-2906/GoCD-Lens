@@ -147,6 +147,11 @@ export function jobStatus(job) {
  * old, which is exactly how a card came to read "just now" beside a page
  * reading "8d ago".
  */
+/** The run a dashboard entry is describing: its most recent one. */
+export function latestRun(pipeline) {
+  return pipeline?._embedded?.instances?.[0] || null;
+}
+
 export function runScheduledAt(run) {
   const own = epochOf(run?.scheduled_at ?? run?.scheduled_date);
   if (own) return own;

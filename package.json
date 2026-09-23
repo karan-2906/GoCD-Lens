@@ -1,12 +1,14 @@
 {
   "name": "gocd-lens",
-  "version": "1.1.4",
+  "version": "1.2.0",
   "private": true,
   "description": "A Chrome extension that reads GoCD pipelines from the API and draws its own dashboard — a modern, fast alternate UI for GoCD.",
   "license": "MIT",
   "type": "module",
   "scripts": {
     "test": "node --test \"tests/*.test.mjs\"",
+    "format": "npx --yes prettier@3.9.9 --ignore-unknown --ignore-path .gitignore --write .",
+    "format:check": "npx --yes prettier@3.9.9 --ignore-unknown --ignore-path .gitignore --check .",
     "test:watch": "node --test --watch \"tests/*.test.mjs\"",
     "icons": "python3 tools/make-icons.py",
     "sounds": "python3 tools/make-sounds.py",

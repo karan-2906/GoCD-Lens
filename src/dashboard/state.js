@@ -18,6 +18,8 @@ import {
   timeAgo,
   matchScore,
   fuzzyMatch,
+  latestRun,
+  runScheduledAt,
 } from "../lib/status.js";
 
 export const state = {
@@ -485,17 +487,96 @@ export function matchingPipelines() {
     matches.push({ pipeline, score, hits, viaGroup, group });
   }
 
-  matches.sort((a, b) => {
-    if (query)
-      return (
-        a.score - b.score || a.pipeline.name.localeCompare(b.pipeline.name)
-      );
-    const rankA = STATUS[pipelineStatus(a.pipeline)].rank;
-    const rankB = STATUS[pipelineStatus(b.pipeline)].rank;
-    return rankA - rankB || a.pipeline.name.localeCompare(b.pipeline.name);
-  });
+  // A search orders by how well it matched, whatever the sort says. Relevance
+  // has to win: Enter opens the first result, so a sort that outranked it would
+  // send you to a pipeline you did not search for.
+  matches.sort(query ? byScore : SORTS[sortId()].compare);
 
   return matches;
+}
+
+// ----------------------------------------------------------------- sorting
+
+const byName = (a, b) => a.pipeline.name.localeCompare(b.pipeline.name);
+const byScore = (a, b) => a.score - b.score || byName(a, b);
+
+/**
+ * Lifts one status to the top and leaves everything else alphabetical.
+ *
+ * Deliberately not a ranking of all five statuses: the label names one thing,
+ * so the list should do that one thing. "Failures first" putting cancelled
+ * above building would be a rule nobody asked to learn.
+ */
+const statusFirst = (wanted) => (a, b) => {
+  const hit = (m) => (wanted.includes(pipelineStatus(m.pipeline)) ? 0 : 1);
+  return hit(a) - hit(b) || byName(a, b);
+};
+
+/**
+ * How pipelines are ordered *within* a group. Group order is never touched --
+ * `groupedMatches` says why.
+ *
+ * `config` leads and is the default: it is the order the group is configured in
+ * on the server, which is what GoCD's own dashboard shows, so the list opens
+ * looking like the instance people already know. Everything else is a question
+ * you can ask of it, and the filter chips remain the fast way to "only show me
+ * what is broken".
+ *
+ * Insertion order here is the order of the dropdown.
+ */
+export const SORTS = {
+  config: {
+    label: "As configured in GoCD",
+    compare: (a, b) => configIndex(a) - configIndex(b) || byName(a, b),
+  },
+  failures: { label: "Failures first", compare: statusFirst(["Failed"]) },
+  passing: { label: "Passing first", compare: statusFirst(["Passed"]) },
+  running: {
+    // Queued counts as running: it is work that is going to happen, and a
+    // separate bucket for it would split the answer to one question.
+    label: "Running first",
+    compare: statusFirst(["Building", "Scheduled"]),
+  },
+  name: { label: "Name A-Z", compare: byName },
+  recent: {
+    // Newest first. A pipeline that has never run has no date to offer, so it
+    // sorts to the end rather than to 1970.
+    label: "Latest run",
+    compare: (a, b) =>
+      runScheduledAt(latestRun(b.pipeline)) -
+        runScheduledAt(latestRun(a.pipeline)) || byName(a, b),
+  },
+};
+
+/** The first key is the default, so the two cannot drift apart. */
+export const DEFAULT_SORT = Object.keys(SORTS)[0];
+
+export function sortId() {
+  const stored = state.settings?.sort;
+  return stored && SORTS[stored] ? stored : DEFAULT_SORT;
+}
+
+export async function setSort(id) {
+  if (!SORTS[id] || id === sortId()) return;
+  state.settings = { ...state.settings, sort: id };
+  rerender();
+  await send("updateSettings", { patch: { sort: id } });
+}
+
+/**
+ * Where a pipeline sits in its *own group's* configured list.
+ *
+ * Two pipelines in different groups can therefore both be at 0, which makes the
+ * flat list this sorts look interleaved. That is fine: `groupedMatches` splits
+ * it back into groups before anything is drawn, and within a group the order is
+ * exactly the configured one.
+ */
+function configIndex(match) {
+  const group = state.groups.find((g) => g.name === match.group);
+  const at = group ? (group.pipelines || []).indexOf(match.pipeline.name) : -1;
+  // A pipeline its group does not list cannot be placed, so it goes last
+  // rather than jumping to the front on -1.
+  return at === -1 ? Number.MAX_SAFE_INTEGER : at;
 }
 
 /**

@@ -29,6 +29,9 @@ import {
   toggleGroupCollapsed,
   setAllGroupsCollapsed,
   selectView,
+  SORTS,
+  sortId,
+  setSort,
 } from "./state.js";
 
 export function renderList(host) {
@@ -87,6 +90,7 @@ function collapseAllBar(sections) {
       text: `${sections.length} groups`,
     }),
     el("span", { class: "spacer" }),
+    ...sortControl(),
     el(
       "button",
       {
@@ -97,6 +101,37 @@ function collapseAllBar(sections) {
       allCollapsed ? "Expand all" : "Collapse all",
     ),
   );
+}
+
+/**
+ * Orders pipelines inside each group, never the groups themselves.
+ *
+ * It sits beside "Collapse all" rather than with the filter chips because it
+ * shapes the same thing they do -- the list you are looking at -- while the
+ * chips decide what is *in* it. Hidden while a search is typed, since the
+ * results are ordered by how well they matched and a control claiming
+ * otherwise would be lying.
+ */
+function sortControl() {
+  if (state.search.trim()) return [];
+
+  const current = sortId();
+  const select = el("select", {
+    class: "sort-picker",
+    title: "How pipelines are ordered inside each group",
+    "aria-label": "Sort pipelines within a group",
+    onchange: () => setSort(select.value),
+  });
+
+  for (const [id, sort] of Object.entries(SORTS)) {
+    select.append(
+      el("option", { value: id, text: sort.label, selected: id === current }),
+    );
+  }
+
+  // Named, because a bare dropdown reading "As configured in GoCD" next to
+  // "Collapse all" does not say what it would do to the list.
+  return [el("span", { class: "sort-label", text: "Sort" }), select];
 }
 
 function sectionHeader({ name, matches, pinned = false, alwaysOpen = false }) {

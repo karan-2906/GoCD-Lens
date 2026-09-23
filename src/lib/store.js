@@ -80,6 +80,8 @@ export const DEFAULT_SETTINGS = {
   sound: true,
   theme: "system",
   density: "comfortable",
+  /** How pipelines are ordered inside a group. See SORTS in state.js. */
+  sort: "config",
 };
 
 /**

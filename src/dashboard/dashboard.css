@@ -911,6 +911,26 @@ body {
  * Compact enough to sit inside the stage header beside the status pill, which
  * the full-width form select this inherits from is not.
  */
+.sort-label {
+  font-size: 12px;
+  color: var(--text-faint);
+  margin-right: 6px;
+}
+
+/* Sits in the list toolbar, so it matches the ghost button beside it rather
+   than the full-width form select it inherits from. */
+.sort-picker {
+  width: auto;
+  padding: 2px 4px 2px 8px;
+  margin-right: 6px;
+  font-size: 12px;
+  font-weight: 560;
+  color: var(--text-faint);
+  background: transparent;
+  border-color: var(--border);
+  cursor: pointer;
+}
+
 .attempt-picker {
   width: auto;
   padding: 2px 4px 2px 8px;
