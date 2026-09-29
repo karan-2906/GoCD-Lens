@@ -59,7 +59,7 @@ async function init() {
   $("#open-dashboard").addEventListener("click", () => openDashboard());
   $("#refresh").addEventListener("click", () => load({ force: true }));
   $("#view-select").addEventListener("change", (event) =>
-    load({ force: true, view: event.target.value }),
+    selectView(event.target.value),
   );
   wireSearch();
 
@@ -158,6 +158,25 @@ function restoreSearch(saved) {
   // are back is usually to type one more character, or to clear it.
   search.focus();
   search.setSelectionRange(saved.length, saved.length);
+}
+
+/**
+ * Pick a view: repaint first, then fetch.
+ *
+ * The dashboard has always done it this way -- `selectView` there moves
+ * `activeView` and rerenders before awaiting the request. The popup awaited the
+ * round trip first, so for as long as that took, the picker still read the view
+ * you had left, above that view's rows. Picking something looked like it had
+ * not registered, and the popup is the worst place for that: it is open for a
+ * few seconds at a time, and a view change is most of what it is for.
+ *
+ * Nothing is fetched twice -- `load` still makes the one request.
+ */
+async function selectView(name) {
+  activeView = name ?? null;
+  paintViewPicker();
+  renderLoading();
+  await load({ force: true, view: name });
 }
 
 async function load({ force = false, view } = {}) {
