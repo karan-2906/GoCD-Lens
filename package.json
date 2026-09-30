@@ -1,6 +1,6 @@
 {
   "name": "gocd-lens",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "private": true,
   "description": "A Chrome extension that reads GoCD pipelines from the API and draws its own dashboard — a modern, fast alternate UI for GoCD.",
   "license": "MIT",
