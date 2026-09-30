@@ -210,23 +210,37 @@
           that never happens is a control with nothing to act on.
         -->
         <div class="field" id="background-window">
-          <label for="background-days">Only check on</label>
-          <div class="two-up">
-            <select id="background-days">
-              <option value="all">Every day</option>
-              <option value="weekdays">Monday to Friday</option>
-              <option value="weekends">Saturday and Sunday</option>
-            </select>
-            <div class="time-range">
-              <label class="sr-only" for="background-from">From</label>
-              <input type="time" id="background-from" />
-              <span>to</span>
-              <label class="sr-only" for="background-to">To</label>
-              <input type="time" id="background-to" />
-              <button type="button" class="link-btn" id="background-clear">
-                Any time
-              </button>
-            </div>
+          <span class="field-label">Background check only on</span>
+          <div
+            class="day-picker"
+            id="background-days"
+            role="group"
+            aria-label="Days background checking is allowed"
+          >
+            <button type="button" data-day="1" aria-pressed="true">Mon</button>
+            <button type="button" data-day="2" aria-pressed="true">Tue</button>
+            <button type="button" data-day="3" aria-pressed="true">Wed</button>
+            <button type="button" data-day="4" aria-pressed="true">Thu</button>
+            <button type="button" data-day="5" aria-pressed="true">Fri</button>
+            <button type="button" data-day="6" aria-pressed="true">Sat</button>
+            <button type="button" data-day="0" aria-pressed="true">Sun</button>
+          </div>
+          <div class="time-range">
+            <!--
+              The value is always "HH:MM" on a 24-hour clock whatever is shown;
+              only the display follows the browser's locale, so a US profile
+              offers AM/PM. `lang` is a hint some engines take and Chrome does
+              not, which is why it is here and why it is not relied on: nothing
+              downstream reads the rendered text.
+            -->
+            <label class="sr-only" for="background-from">From</label>
+            <input type="time" id="background-from" lang="en-GB" />
+            <span>to</span>
+            <label class="sr-only" for="background-to">To</label>
+            <input type="time" id="background-to" lang="en-GB" />
+            <button type="button" class="link-btn" id="background-clear">
+              Any time
+            </button>
           </div>
           <p class="hint" id="background-window-hint"></p>
         </div>

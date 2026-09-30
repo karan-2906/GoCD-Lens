@@ -161,12 +161,14 @@ export function jobStatus(job) {
  * could ever land on.
  */
 export function withinSchedule(
-  { days = "all", from = "", to = "" } = {},
+  { days, from = "", to = "" } = {},
   now = new Date(),
 ) {
-  const day = now.getDay();
-  if (days === "weekdays" && (day === 0 || day === 6)) return false;
-  if (days === "weekends" && day !== 0 && day !== 6) return false;
+  const allowed = dayList(days);
+  // Every day unticked is a real answer -- it means no day is allowed -- and
+  // the settings page says so in words rather than letting it look like a
+  // window that simply is not doing anything.
+  if (allowed && !allowed.includes(now.getDay())) return false;
 
   const start = minutesOfDay(from);
   const end = minutesOfDay(to);
@@ -174,6 +176,21 @@ export function withinSchedule(
 
   const at = now.getHours() * 60 + now.getMinutes();
   return start < end ? at >= start && at < end : at >= start || at < end;
+}
+
+/**
+ * The days a schedule allows, as `Date.getDay()` numbers, or null for "any".
+ *
+ * Stored as an array so the picker can say Tuesdays and Thursdays rather than
+ * only the two shapes of week somebody guessed at. The earlier string form
+ * shipped for a day, so it is still understood rather than left to read as an
+ * empty list and stop every check.
+ */
+function dayList(days) {
+  if (Array.isArray(days)) return days.map(Number).filter(Number.isInteger);
+  if (days === "weekdays") return [1, 2, 3, 4, 5];
+  if (days === "weekends") return [0, 6];
+  return null;
 }
 
 /** "HH:MM" to minutes past midnight, or null if it is not a time. */

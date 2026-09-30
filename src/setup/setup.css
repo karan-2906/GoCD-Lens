@@ -168,6 +168,46 @@ fieldset.auth-modes legend {
   gap: 14px;
 }
 
+.day-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.day-picker button {
+  padding: 6px 11px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 560;
+  color: var(--text-muted);
+  background: var(--bg-elev);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+/* Pressed is the loud state: the days it *will* run are the answer people are
+   reading off this row, not the ones it will skip. */
+.day-picker button[aria-pressed="true"] {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.day-picker button:disabled {
+  cursor: default;
+}
+
+/* The label is a <span> because this field has no single control to point a
+   <label for> at -- seven buttons and two inputs. */
+.field-label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 560;
+  margin-bottom: 6px;
+}
+
 .time-range {
   display: flex;
   align-items: center;

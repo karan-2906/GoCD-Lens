@@ -58,7 +58,7 @@ export const DEFAULT_SETTINGS = {
    * open you are plainly at your desk, and the two existing controls go on
    * meaning exactly what they say.
    */
-  backgroundDays: "all",
+  backgroundDays: [0, 1, 2, 3, 4, 5, 6],
   backgroundFrom: "",
   backgroundTo: "",
   /**

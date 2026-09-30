@@ -85,6 +85,10 @@ function paintConnection() {
   $("#save").textContent = conn ? "Save connection" : "Connect";
   if (!conn) return;
 
+  // A saved connection was verified against the server before it was stored,
+  // so whatever path it uses is the right one for this install.
+  provenUrls.add(cleanUrl(conn.serverUrl));
+
   $("#server-url").value = conn.serverUrl;
   const radio = $(`#auth-${conn.authMode}`);
   if (radio) radio.checked = true;
@@ -128,8 +132,14 @@ function wireConnection() {
     toggleSecret("#token", "#toggle-token"),
   );
 
-  $("#save").addEventListener("click", () => withBusy($("#save"), save));
-  $("#test").addEventListener("click", () => withBusy($("#test"), test));
+  // A failed attempt is exactly when the /go hint earns its place, so both of
+  // these re-run the check on the way out whether they worked or not.
+  $("#save").addEventListener("click", () =>
+    withBusy($("#save"), save).finally(warnAboutUrl),
+  );
+  $("#test").addEventListener("click", () =>
+    withBusy($("#test"), test).finally(warnAboutUrl),
+  );
   $("#disconnect").addEventListener("click", disconnect);
   $("#run-diagnostics").addEventListener("click", () =>
     withBusy($("#run-diagnostics"), diagnose),
@@ -143,6 +153,23 @@ function toggleSecret(inputSelector, buttonSelector) {
   input.type = showing ? "password" : "text";
   clear(button).append(icon(showing ? "eye" : "eye-off"));
 }
+
+/**
+ * Server URLs that have actually answered, so the /go hint can stop guessing at
+ * one that demonstrably works.
+ *
+ * GoCD's context path is configurable and a fair number of installs sit at the
+ * root of their own host. Telling someone with a working root-path server to
+ * "try adding /go" is the same wrong assumption as adding it for them would be,
+ * and it is worse once they are connected: the banner outlives the problem it
+ * was written for.
+ */
+const provenUrls = new Set();
+
+const cleanUrl = (raw) =>
+  String(raw || "")
+    .trim()
+    .replace(/\/+$/, "");
 
 function warnAboutUrl() {
   const raw = $("#server-url").value.trim();
@@ -172,7 +199,8 @@ function warnAboutUrl() {
     );
   } else if (
     !/\/go\/?$/.test(url.pathname) &&
-    url.pathname.replace(/\/+$/, "") === ""
+    url.pathname.replace(/\/+$/, "") === "" &&
+    !provenUrls.has(cleanUrl(raw))
   ) {
     host.append(
       banner(
@@ -253,6 +281,8 @@ async function save() {
   await ensurePermission(connection.serverUrl);
 
   const result = await send("saveConnection", { connection });
+  provenUrls.add(cleanUrl(connection.serverUrl));
+  warnAboutUrl();
   state = await send("getState");
   paintConnection();
 
@@ -280,6 +310,9 @@ async function test() {
   }
   await ensurePermission(connection.serverUrl);
   const result = await send("testConnection", { connection });
+  // Nothing is saved by a test, but the URL has still proved itself.
+  provenUrls.add(cleanUrl(connection.serverUrl));
+  warnAboutUrl();
   showResult(
     "ok",
     `GoCD ${result.version || ""} answered: ${result.pipelines} pipelines across ${result.groups} groups. Nothing was saved.`,
@@ -394,7 +427,7 @@ function paintSettings() {
     s.backgroundMinutes,
     DEFAULTS.backgroundMinutes,
   );
-  selectValue("#background-days", s.backgroundDays, DEFAULTS.backgroundDays);
+  paintDayPicker(s.backgroundDays);
   $("#background-from").value = s.backgroundFrom ?? DEFAULTS.backgroundFrom;
   $("#background-to").value = s.backgroundTo ?? DEFAULTS.backgroundTo;
   paintBackgroundWindow();
@@ -418,8 +451,12 @@ function syncNotifyControls() {
 }
 
 function wireSettings() {
-  const patch = (fn) => async () => {
-    state.settings = await send("updateSettings", { patch: fn() });
+  const patch = (fn) => async (event) => {
+    // A handler is allowed to decline: the day row hears clicks that land
+    // between its buttons, and those must not save or say "Saved".
+    const changes = fn(event);
+    if (!changes) return;
+    state.settings = await send("updateSettings", { patch: changes });
     applyTheme(state.settings.theme);
     paintLoadEstimate();
     paintNotificationDelay();
@@ -448,19 +485,34 @@ function wireSettings() {
     }),
   );
 
-  for (const id of ["#background-days", "#background-from", "#background-to"]) {
+  for (const id of ["#background-from", "#background-to"]) {
     $(id).addEventListener(
       "change",
       patch(() => {
         queueMicrotask(paintBackgroundWindow);
         return {
-          backgroundDays: $("#background-days").value,
           backgroundFrom: $("#background-from").value,
           backgroundTo: $("#background-to").value,
         };
       }),
     );
   }
+
+  // One listener on the row rather than seven on the buttons: the row is what
+  // the days belong to, and it survives any change to which days are in it.
+  $("#background-days").addEventListener(
+    "click",
+    patch((event) => {
+      const button = event.target.closest("button[data-day]");
+      if (!button) return null;
+      button.setAttribute(
+        "aria-pressed",
+        button.getAttribute("aria-pressed") === "true" ? "false" : "true",
+      );
+      queueMicrotask(paintBackgroundWindow);
+      return { backgroundDays: selectedDays() };
+    }),
+  );
 
   $("#background-clear").addEventListener(
     "click",
@@ -636,6 +688,36 @@ function paintNotificationDelay() {
  * inputs and a day picker are three things to hold in your head and one
  * sentence is not.
  */
+const DAY_BUTTONS = () => [
+  ...$("#background-days").querySelectorAll("button[data-day]"),
+];
+
+/** The ticked days, as Date.getDay() numbers, in the order the row shows them. */
+function selectedDays() {
+  return DAY_BUTTONS()
+    .filter((b) => b.getAttribute("aria-pressed") === "true")
+    .map((b) => Number(b.dataset.day));
+}
+
+function paintDayPicker(days) {
+  // An older build stored a string here. Read it rather than letting it land as
+  // "no days" and quietly stop every background check.
+  const allowed = Array.isArray(days)
+    ? days
+    : days === "weekdays"
+      ? [1, 2, 3, 4, 5]
+      : days === "weekends"
+        ? [0, 6]
+        : DEFAULTS.backgroundDays;
+
+  for (const button of DAY_BUTTONS()) {
+    button.setAttribute(
+      "aria-pressed",
+      String(allowed.includes(Number(button.dataset.day))),
+    );
+  }
+}
+
 function paintBackgroundWindow() {
   const minutes = Number($("#background-minutes").value);
   const field = $("#background-window");
@@ -643,27 +725,43 @@ function paintBackgroundWindow() {
 
   field.classList.toggle("is-disabled", off);
   for (const id of [
-    "#background-days",
     "#background-from",
     "#background-to",
     "#background-clear",
   ]) {
     $(id).disabled = off;
   }
+  for (const button of DAY_BUTTONS()) button.disabled = off;
 
   $("#background-window-hint").textContent = off
     ? "Turn background checking on above to choose when it runs."
     : describeBackgroundWindow(minutes);
 }
 
+const DAY_NAMES = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
+
 function describeBackgroundWindow(minutes) {
   const every =
     minutes === 60 ? "Checks hourly" : `Checks every ${minutes} minutes`;
-  const days = {
-    weekdays: " Monday to Friday",
-    weekends: " on Saturday and Sunday",
-    all: " every day",
-  }[$("#background-days").value];
+
+  const picked = selectedDays();
+  // Saying "on no days" would be describing a setting rather than warning about
+  // one. Nothing will run, so say that first.
+  if (picked.length === 0)
+    return "No days selected, so nothing will be checked in the background.";
+
+  const days =
+    picked.length === 7
+      ? " every day"
+      : ` on ${picked.map((d) => DAY_NAMES[d]).join(", ")}`;
 
   const from = $("#background-from").value;
   const to = $("#background-to").value;

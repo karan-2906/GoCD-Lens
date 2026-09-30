@@ -672,17 +672,42 @@ test("a window that ends before it starts runs through midnight", () => {
   assert.equal(withinSchedule(overnight, WED_NOON), false);
 });
 
-test("weekdays and weekends mean what they say", () => {
+test("days are picked one at a time, not as a shape of week", () => {
+  // Sunday is 0, matching Date.getDay(), so the picker and the predicate agree
+  // without a translation step in between.
+  assert.equal(withinSchedule({ days: [3] }, WED_NOON), true);
+  assert.equal(
+    withinSchedule({ days: [2, 4] }, WED_NOON),
+    false,
+    "Tue and Thu is not Wed",
+  );
+  assert.equal(withinSchedule({ days: [0, 6] }, SAT_NOON), true);
+  assert.equal(withinSchedule({ days: [0, 6] }, WED_NOON), false);
+  assert.equal(withinSchedule({ days: [0, 1, 2, 3, 4, 5, 6] }, SUN_NOON), true);
+});
+
+test("no days ticked means nothing runs, rather than everything", () => {
+  // Unticking every day is a deliberate act; reading it as "no restriction"
+  // would run checks the user just said they did not want.
+  assert.equal(withinSchedule({ days: [] }, WED_NOON), false);
+  assert.equal(withinSchedule({ days: [] }, SUN_NOON), false);
+  // Absent is different from empty: it means nobody has chosen.
+  assert.equal(withinSchedule({}, WED_NOON), true);
+  assert.equal(withinSchedule({ days: undefined }, SUN_NOON), true);
+});
+
+test("the day strings an older build stored are still understood", () => {
+  // They shipped briefly. Reading them as an empty list would silently stop
+  // every background check for anyone who had set one.
   assert.equal(withinSchedule({ days: "weekdays" }, WED_NOON), true);
-  assert.equal(withinSchedule({ days: "weekdays" }, SAT_NOON), false);
   assert.equal(withinSchedule({ days: "weekdays" }, SUN_NOON), false);
   assert.equal(withinSchedule({ days: "weekends" }, SAT_NOON), true);
-  assert.equal(withinSchedule({ days: "weekends" }, SUN_NOON), true);
   assert.equal(withinSchedule({ days: "weekends" }, WED_NOON), false);
+  assert.equal(withinSchedule({ days: "all" }, SUN_NOON), true);
 });
 
 test("the day and the hours both have to agree", () => {
-  const office = { days: "weekdays", from: "09:00", to: "18:00" };
+  const office = { days: [1, 2, 3, 4, 5], from: "09:00", to: "18:00" };
   assert.equal(withinSchedule(office, WED_NOON), true);
   assert.equal(withinSchedule(office, WED_3AM), false, "right day, wrong hour");
   assert.equal(

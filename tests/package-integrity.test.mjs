@@ -314,7 +314,6 @@ test("every dropdown default is actually one of that dropdown\u2019s options", (
     ["poll", "pollSeconds"],
     ["background-minutes", "backgroundMinutes"],
     ["badge-source", "badgeSource"],
-    ["background-days", "backgroundDays"],
     ["theme", "theme"],
     ["density", "density"],
   ]) {
