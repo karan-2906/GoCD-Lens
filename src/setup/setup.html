@@ -190,17 +190,45 @@
         <div class="field">
           <label for="background-minutes">Check in the background every</label>
           <select id="background-minutes">
-            <option value="1">1 minute</option>
-            <option value="5">5 minutes</option>
-            <option value="15">15 minutes</option>
-            <option value="60">1 hour</option>
             <option value="0">Never - only while a tab is open</option>
+            <option value="5">5 minutes</option>
+            <option value="10">10 minutes</option>
+            <option value="15">15 minutes</option>
+            <option value="30">30 minutes</option>
+            <option value="60">1 hour</option>
           </select>
           <p class="hint">
             How frequently to check for updates when the dashboard is not open.
             This keeps the toolbar badge current; set it to Never and the badge
             only updates while a tab is open.
           </p>
+        </div>
+
+        <!--
+          Narrows the interval above and nothing else, which is why it sits
+          under it and greys out when that reads Never: a window on a check
+          that never happens is a control with nothing to act on.
+        -->
+        <div class="field" id="background-window">
+          <label for="background-days">Only check on</label>
+          <div class="two-up">
+            <select id="background-days">
+              <option value="all">Every day</option>
+              <option value="weekdays">Monday to Friday</option>
+              <option value="weekends">Saturday and Sunday</option>
+            </select>
+            <div class="time-range">
+              <label class="sr-only" for="background-from">From</label>
+              <input type="time" id="background-from" />
+              <span>to</span>
+              <label class="sr-only" for="background-to">To</label>
+              <input type="time" id="background-to" />
+              <button type="button" class="link-btn" id="background-clear">
+                Any time
+              </button>
+            </div>
+          </div>
+          <p class="hint" id="background-window-hint"></p>
         </div>
 
         <div class="field">

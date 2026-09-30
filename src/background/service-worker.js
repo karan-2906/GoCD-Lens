@@ -40,6 +40,7 @@ import {
   stageStatus,
   isActive,
   matchScore,
+  withinSchedule,
 } from "../lib/status.js";
 
 const POLL_ALARM = "gocd-lens-poll";
@@ -93,6 +94,21 @@ function shouldSkipBackgroundPoll(cached) {
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name !== POLL_ALARM) return;
   try {
+    // The window gates the request, not just the notification. Gating only the
+    // notification would still ask GoCD the question at 3am, which is most of
+    // what anyone setting a window is trying to avoid. The alarm keeps firing
+    // on its own period; it just does nothing outside the hours.
+    const settings = await getSettings();
+    if (
+      !withinSchedule({
+        days: settings.backgroundDays,
+        from: settings.backgroundFrom,
+        to: settings.backgroundTo,
+      })
+    ) {
+      return;
+    }
+
     const cached = await getCache();
     const busy = (cached?.pipelines || []).some((p) =>
       isActive(pipelineStatus(p)),

@@ -24,6 +24,7 @@ import {
   parseLogLine,
   timeAgo,
   runScheduledAt,
+  withinSchedule,
   duration,
 } from "../src/lib/status.js";
 
@@ -624,4 +625,86 @@ test("durations are written in the largest useful unit", () => {
   assert.equal(duration(3_900_000), "1h 5m");
   assert.equal(duration(0), "");
   assert.equal(duration(-5), "");
+});
+
+// ------------------------------------------------- the background window
+
+/**
+ * Background checking is the only thing that talks to GoCD with nobody
+ * watching, so "how often" is half the question and "when" is the other half.
+ */
+const on = (iso) => new Date(iso);
+const WED_NOON = on("2026-09-30T12:00:00");
+const WED_3AM = on("2026-09-30T03:00:00");
+const SUN_NOON = on("2026-10-04T12:00:00");
+const SAT_NOON = on("2026-10-03T12:00:00");
+
+test("no window means always, so nobody who did not ask for one gets one", () => {
+  assert.equal(withinSchedule(undefined, WED_3AM), true);
+  assert.equal(withinSchedule({}, WED_3AM), true);
+  assert.equal(
+    withinSchedule({ days: "all", from: "", to: "" }, WED_3AM),
+    true,
+  );
+});
+
+test("a daytime window lets the day through and keeps the night out", () => {
+  const nine_to_six = { from: "09:00", to: "18:00" };
+  assert.equal(withinSchedule(nine_to_six, WED_NOON), true);
+  assert.equal(withinSchedule(nine_to_six, WED_3AM), false);
+  assert.equal(
+    withinSchedule(nine_to_six, on("2026-09-30T09:00:00")),
+    true,
+    "inclusive at the start",
+  );
+  assert.equal(
+    withinSchedule(nine_to_six, on("2026-09-30T18:00:00")),
+    false,
+    "exclusive at the end",
+  );
+});
+
+test("a window that ends before it starts runs through midnight", () => {
+  // The case a naive from <= now <= to reads as "never".
+  const overnight = { from: "22:00", to: "06:00" };
+  assert.equal(withinSchedule(overnight, on("2026-09-30T23:00:00")), true);
+  assert.equal(withinSchedule(overnight, WED_3AM), true);
+  assert.equal(withinSchedule(overnight, WED_NOON), false);
+});
+
+test("weekdays and weekends mean what they say", () => {
+  assert.equal(withinSchedule({ days: "weekdays" }, WED_NOON), true);
+  assert.equal(withinSchedule({ days: "weekdays" }, SAT_NOON), false);
+  assert.equal(withinSchedule({ days: "weekdays" }, SUN_NOON), false);
+  assert.equal(withinSchedule({ days: "weekends" }, SAT_NOON), true);
+  assert.equal(withinSchedule({ days: "weekends" }, SUN_NOON), true);
+  assert.equal(withinSchedule({ days: "weekends" }, WED_NOON), false);
+});
+
+test("the day and the hours both have to agree", () => {
+  const office = { days: "weekdays", from: "09:00", to: "18:00" };
+  assert.equal(withinSchedule(office, WED_NOON), true);
+  assert.equal(withinSchedule(office, WED_3AM), false, "right day, wrong hour");
+  assert.equal(
+    withinSchedule(office, SAT_NOON),
+    false,
+    "right hour, wrong day",
+  );
+});
+
+test("a window that cannot be read is treated as no window, not as never", () => {
+  // Half-filled inputs are the normal state while someone is still typing, and
+  // silently stopping every background check would be a hard bug to find.
+  assert.equal(withinSchedule({ from: "09:00", to: "" }, WED_3AM), true);
+  assert.equal(withinSchedule({ from: "", to: "18:00" }, WED_3AM), true);
+  assert.equal(
+    withinSchedule({ from: "nonsense", to: "18:00" }, WED_3AM),
+    true,
+  );
+  assert.equal(withinSchedule({ from: "25:00", to: "18:00" }, WED_3AM), true);
+  assert.equal(
+    withinSchedule({ from: "09:00", to: "09:00" }, WED_3AM),
+    true,
+    "equal ends is not a one-minute window",
+  );
 });

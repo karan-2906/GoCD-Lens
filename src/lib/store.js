@@ -51,6 +51,17 @@ export const DEFAULT_SETTINGS = {
    */
   backgroundMinutes: 0,
   /**
+   * When those unattended checks are allowed. Empty means always, so nobody
+   * who has not asked for a window gets one.
+   *
+   * This narrows `backgroundMinutes` and nothing else: with a dashboard tab
+   * open you are plainly at your desk, and the two existing controls go on
+   * meaning exactly what they say.
+   */
+  backgroundDays: "all",
+  backgroundFrom: "",
+  backgroundTo: "",
+  /**
    * The user's chosen GoCD personalized view, by name. `null` means every
    * pipeline they can see -- which is a real choice, not "unset", so the
    * refresh path has to tell it apart from "leave this alone".

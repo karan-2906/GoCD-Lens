@@ -147,6 +147,45 @@ export function jobStatus(job) {
  * old, which is exactly how a card came to read "just now" beside a page
  * reading "8d ago".
  */
+/**
+ * Is an unattended check allowed right now?
+ *
+ * Background checking is the only thing here that talks to GoCD with nobody
+ * watching, so "how often" is only half the question -- the other half is when.
+ * An empty window means always, which is what everyone gets until they say
+ * otherwise.
+ *
+ * `from` and `to` are "HH:MM" in the machine's own time. A window that ends
+ * before it starts runs through midnight: 22:00-06:00 is overnight, not never.
+ * Equal ends are treated as always rather than as a single instant nothing
+ * could ever land on.
+ */
+export function withinSchedule(
+  { days = "all", from = "", to = "" } = {},
+  now = new Date(),
+) {
+  const day = now.getDay();
+  if (days === "weekdays" && (day === 0 || day === 6)) return false;
+  if (days === "weekends" && day !== 0 && day !== 6) return false;
+
+  const start = minutesOfDay(from);
+  const end = minutesOfDay(to);
+  if (start === null || end === null || start === end) return true;
+
+  const at = now.getHours() * 60 + now.getMinutes();
+  return start < end ? at >= start && at < end : at >= start || at < end;
+}
+
+/** "HH:MM" to minutes past midnight, or null if it is not a time. */
+function minutesOfDay(value) {
+  const match = /^(\d{1,2}):(\d{2})$/.exec(String(value || "").trim());
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const mins = Number(match[2]);
+  if (hours > 23 || mins > 59) return null;
+  return hours * 60 + mins;
+}
+
 /** The run a dashboard entry is describing: its most recent one. */
 export function latestRun(pipeline) {
   return pipeline?._embedded?.instances?.[0] || null;

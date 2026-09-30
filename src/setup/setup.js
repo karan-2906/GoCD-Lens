@@ -394,6 +394,10 @@ function paintSettings() {
     s.backgroundMinutes,
     DEFAULTS.backgroundMinutes,
   );
+  selectValue("#background-days", s.backgroundDays, DEFAULTS.backgroundDays);
+  $("#background-from").value = s.backgroundFrom ?? DEFAULTS.backgroundFrom;
+  $("#background-to").value = s.backgroundTo ?? DEFAULTS.backgroundTo;
+  paintBackgroundWindow();
   $("#notifications").checked = s.notifications;
   $("#notify-when-closed").checked = s.notifyWhenClosed;
   $("#notify-starred").checked = s.notifyStarred;
@@ -436,9 +440,36 @@ function wireSettings() {
 
   $("#background-minutes").addEventListener(
     "change",
-    patch(() => ({
-      backgroundMinutes: Number($("#background-minutes").value),
-    })),
+    patch(() => {
+      // Repaint before the save round-trips, or the window below stays greyed
+      // out for as long as storage takes to answer.
+      queueMicrotask(paintBackgroundWindow);
+      return { backgroundMinutes: Number($("#background-minutes").value) };
+    }),
+  );
+
+  for (const id of ["#background-days", "#background-from", "#background-to"]) {
+    $(id).addEventListener(
+      "change",
+      patch(() => {
+        queueMicrotask(paintBackgroundWindow);
+        return {
+          backgroundDays: $("#background-days").value,
+          backgroundFrom: $("#background-from").value,
+          backgroundTo: $("#background-to").value,
+        };
+      }),
+    );
+  }
+
+  $("#background-clear").addEventListener(
+    "click",
+    patch(() => {
+      $("#background-from").value = "";
+      $("#background-to").value = "";
+      queueMicrotask(paintBackgroundWindow);
+      return { backgroundFrom: "", backgroundTo: "" };
+    }),
   );
   $("#notify-when-closed").addEventListener(
     "change",
@@ -597,6 +628,51 @@ function paintNotificationDelay() {
       el("span", {}, lead, where, tail),
     ),
   );
+}
+
+/**
+ * The window is a qualifier on the interval above it, so it greys out when that
+ * reads Never -- and says in words what it will actually do, because two time
+ * inputs and a day picker are three things to hold in your head and one
+ * sentence is not.
+ */
+function paintBackgroundWindow() {
+  const minutes = Number($("#background-minutes").value);
+  const field = $("#background-window");
+  const off = minutes === 0;
+
+  field.classList.toggle("is-disabled", off);
+  for (const id of [
+    "#background-days",
+    "#background-from",
+    "#background-to",
+    "#background-clear",
+  ]) {
+    $(id).disabled = off;
+  }
+
+  $("#background-window-hint").textContent = off
+    ? "Turn background checking on above to choose when it runs."
+    : describeBackgroundWindow(minutes);
+}
+
+function describeBackgroundWindow(minutes) {
+  const every =
+    minutes === 60 ? "Checks hourly" : `Checks every ${minutes} minutes`;
+  const days = {
+    weekdays: " Monday to Friday",
+    weekends: " on Saturday and Sunday",
+    all: " every day",
+  }[$("#background-days").value];
+
+  const from = $("#background-from").value;
+  const to = $("#background-to").value;
+  if (!from || !to || from === to) return `${every}${days}, at any hour.`;
+
+  // A window that ends before it starts runs through midnight, and saying so
+  // is the difference between a setting people trust and one they re-check.
+  const overnight = from > to ? ", through midnight" : "";
+  return `${every}${days} between ${from} and ${to}${overnight}.`;
 }
 
 /** Take the user to the control the warning is about, and leave the choice to them. */
