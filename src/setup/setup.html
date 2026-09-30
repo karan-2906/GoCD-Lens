@@ -233,12 +233,15 @@
             quarters is 112 lines of markup nobody should have to read.
           -->
           <div class="time-range">
-            <span class="sr-only" id="from-label">From</span>
+            <!--
+              The two words are visible and are also what names the selects to a
+              screen reader, so there is no hidden copy of them to keep in step.
+            -->
+            <span id="from-label">From</span>
             <select id="from-hour" aria-labelledby="from-label"></select>
             <span class="colon">:</span>
             <select id="from-minute" aria-labelledby="from-label"></select>
-            <span>to</span>
-            <span class="sr-only" id="to-label">To</span>
+            <span id="to-label">To</span>
             <select id="to-hour" aria-labelledby="to-label"></select>
             <span class="colon">:</span>
             <select id="to-minute" aria-labelledby="to-label"></select>

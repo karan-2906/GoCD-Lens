@@ -214,10 +214,28 @@ fieldset.auth-modes legend {
   gap: 8px;
 }
 
-.time-range select {
+/*
+ * Two digits wide, not full width.
+ *
+ * `.card .field select` is the form-field rule -- 100% wide with 36px of
+ * padding held for its chevron -- and it sits later in this file with a higher
+ * specificity than `.time-range select`, so it won both ways and these came
+ * out as wide as the dropdowns above them. Hence the longer selector: this is
+ * a field whose controls are not fields.
+ */
+.card .field .time-range select {
+  flex: 0 0 auto;
   width: auto;
-  padding: 6px 8px;
+  min-width: 0;
+  padding: 6px 26px 6px 10px;
+  background-position: right 8px center;
   font-variant-numeric: tabular-nums;
+}
+
+/* "Any time" is three syllables, not two lines. */
+.time-range .link-btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 /* Tight against its selects so HH : MM reads as one time, not three controls. */
