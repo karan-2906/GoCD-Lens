@@ -225,19 +225,23 @@
             <button type="button" data-day="6" aria-pressed="true">Sat</button>
             <button type="button" data-day="0" aria-pressed="true">Sun</button>
           </div>
+          <!--
+            Four selects rather than two <input type="time">, because a time
+            input renders on whatever clock the browser's locale uses and there
+            is no attribute that asks for 24 hours -- `lang` is a hint Chrome
+            ignores here. The options are built in JS: 24 hours and four
+            quarters is 112 lines of markup nobody should have to read.
+          -->
           <div class="time-range">
-            <!--
-              The value is always "HH:MM" on a 24-hour clock whatever is shown;
-              only the display follows the browser's locale, so a US profile
-              offers AM/PM. `lang` is a hint some engines take and Chrome does
-              not, which is why it is here and why it is not relied on: nothing
-              downstream reads the rendered text.
-            -->
-            <label class="sr-only" for="background-from">From</label>
-            <input type="time" id="background-from" lang="en-GB" />
+            <span class="sr-only" id="from-label">From</span>
+            <select id="from-hour" aria-labelledby="from-label"></select>
+            <span class="colon">:</span>
+            <select id="from-minute" aria-labelledby="from-label"></select>
             <span>to</span>
-            <label class="sr-only" for="background-to">To</label>
-            <input type="time" id="background-to" lang="en-GB" />
+            <span class="sr-only" id="to-label">To</span>
+            <select id="to-hour" aria-labelledby="to-label"></select>
+            <span class="colon">:</span>
+            <select id="to-minute" aria-labelledby="to-label"></select>
             <button type="button" class="link-btn" id="background-clear">
               Any time
             </button>

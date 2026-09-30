@@ -214,10 +214,15 @@ fieldset.auth-modes legend {
   gap: 8px;
 }
 
-.time-range input[type="time"] {
+.time-range select {
   width: auto;
-  flex: 1 1 0;
-  min-width: 0;
+  padding: 6px 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tight against its selects so HH : MM reads as one time, not three controls. */
+.time-range .colon {
+  margin: 0 -4px;
 }
 
 .time-range span {

@@ -25,6 +25,7 @@ import {
   timeAgo,
   runScheduledAt,
   withinSchedule,
+  describeDays,
   duration,
 } from "../src/lib/status.js";
 
@@ -732,4 +733,34 @@ test("a window that cannot be read is treated as no window, not as never", () =>
     true,
     "equal ends is not a one-minute window",
   );
+});
+
+test("a set of days is read back the way a person would say it", () => {
+  // "Monday, Tuesday, Wednesday, Thursday, Friday" is a list you have to parse.
+  assert.equal(describeDays([0, 1, 2, 3, 4, 5, 6]), "every day");
+  assert.equal(describeDays([1, 2, 3, 4, 5]), "Monday to Friday");
+  assert.equal(describeDays([1, 2, 3, 4]), "Monday to Thursday");
+  assert.equal(describeDays([3]), "Wednesday");
+});
+
+test("two days are a pair, not a range", () => {
+  // "Saturday to Sunday" reads like something was left out of the middle.
+  assert.equal(describeDays([0, 6]), "Saturday and Sunday");
+  assert.equal(describeDays([1, 2]), "Monday and Tuesday");
+});
+
+test("days with gaps are spelled out, because nothing shorter is still true", () => {
+  assert.equal(describeDays([1, 3, 5]), "Monday, Wednesday and Friday");
+  assert.equal(describeDays([1, 2, 5]), "Monday, Tuesday and Friday");
+});
+
+test("the week is read Monday first, whatever order the days arrive in", () => {
+  // Stored as getDay() numbers, where Sunday is 0 and would otherwise lead.
+  assert.equal(describeDays([5, 1, 3]), "Monday, Wednesday and Friday");
+  assert.equal(describeDays([0, 5]), "Friday and Sunday");
+});
+
+test("no days has no description, because it is a warning not a summary", () => {
+  assert.equal(describeDays([]), null);
+  assert.equal(describeDays(undefined), null);
 });

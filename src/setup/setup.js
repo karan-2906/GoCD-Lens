@@ -19,6 +19,7 @@ import {
   confirmDialog,
 } from "../common/ui.js";
 import { originPattern } from "../lib/gocd.js";
+import { describeDays } from "../lib/status.js";
 import {
   DEFAULT_SETTINGS as DEFAULTS,
   backgroundPeriodMinutes,
@@ -31,6 +32,9 @@ init();
 async function init() {
   await loadSprite();
   decorateIcons();
+
+  // Before paintSettings, which writes the saved window into these.
+  fillTimeSelects();
 
   state = await send("getState");
   applyTheme(state.settings.theme);
@@ -133,13 +137,20 @@ function wireConnection() {
   );
 
   // A failed attempt is exactly when the /go hint earns its place, so both of
-  // these re-run the check on the way out whether they worked or not.
-  $("#save").addEventListener("click", () =>
-    withBusy($("#save"), save).finally(warnAboutUrl),
-  );
-  $("#test").addEventListener("click", () =>
-    withBusy($("#test"), test).finally(warnAboutUrl),
-  );
+  // these record the outcome and re-run the check on the way out.
+  const attempt = (button, fn) => () =>
+    withBusy(button, async () => {
+      try {
+        await fn();
+        connectionFailed = false;
+      } catch (err) {
+        connectionFailed = true;
+        throw err;
+      }
+    }).finally(warnAboutUrl);
+
+  $("#save").addEventListener("click", attempt($("#save"), save));
+  $("#test").addEventListener("click", attempt($("#test"), test));
   $("#disconnect").addEventListener("click", disconnect);
   $("#run-diagnostics").addEventListener("click", () =>
     withBusy($("#run-diagnostics"), diagnose),
@@ -165,6 +176,15 @@ function toggleSecret(inputSelector, buttonSelector) {
  * was written for.
  */
 const provenUrls = new Set();
+
+/**
+ * Whether the last Connect or Test actually failed.
+ *
+ * The /go hint used to appear the moment the path looked empty, which meant
+ * everyone with a root-path server was told they had it wrong before they had
+ * tried anything. It is advice for a failure, so it waits for one.
+ */
+let connectionFailed = false;
 
 const cleanUrl = (raw) =>
   String(raw || "")
@@ -200,6 +220,7 @@ function warnAboutUrl() {
   } else if (
     !/\/go\/?$/.test(url.pathname) &&
     url.pathname.replace(/\/+$/, "") === "" &&
+    connectionFailed &&
     !provenUrls.has(cleanUrl(raw))
   ) {
     host.append(
@@ -428,8 +449,8 @@ function paintSettings() {
     DEFAULTS.backgroundMinutes,
   );
   paintDayPicker(s.backgroundDays);
-  $("#background-from").value = s.backgroundFrom ?? DEFAULTS.backgroundFrom;
-  $("#background-to").value = s.backgroundTo ?? DEFAULTS.backgroundTo;
+  writeTime("from", s.backgroundFrom ?? DEFAULTS.backgroundFrom);
+  writeTime("to", s.backgroundTo ?? DEFAULTS.backgroundTo);
   paintBackgroundWindow();
   $("#notifications").checked = s.notifications;
   $("#notify-when-closed").checked = s.notifyWhenClosed;
@@ -485,14 +506,14 @@ function wireSettings() {
     }),
   );
 
-  for (const id of ["#background-from", "#background-to"]) {
+  for (const id of ["#from-hour", "#from-minute", "#to-hour", "#to-minute"]) {
     $(id).addEventListener(
       "change",
       patch(() => {
         queueMicrotask(paintBackgroundWindow);
         return {
-          backgroundFrom: $("#background-from").value,
-          backgroundTo: $("#background-to").value,
+          backgroundFrom: readTime("from"),
+          backgroundTo: readTime("to"),
         };
       }),
     );
@@ -517,8 +538,8 @@ function wireSettings() {
   $("#background-clear").addEventListener(
     "click",
     patch(() => {
-      $("#background-from").value = "";
-      $("#background-to").value = "";
+      writeTime("from", "");
+      writeTime("to", "");
       queueMicrotask(paintBackgroundWindow);
       return { backgroundFrom: "", backgroundTo: "" };
     }),
@@ -688,6 +709,43 @@ function paintNotificationDelay() {
  * inputs and a day picker are three things to hold in your head and one
  * sentence is not.
  */
+/**
+ * The clock is ours, so it reads 24 hours everywhere rather than on whichever
+ * locale the browser happens to be set to. Quarter hours only: this schedules
+ * an unattended check, and a window that has to start at 09:07 is one nobody
+ * has ever wanted.
+ */
+function fillTimeSelects() {
+  for (const side of ["from", "to"]) {
+    const hour = $(`#${side}-hour`);
+    // Blank means this end has no bound, which is what "Any time" leaves behind.
+    hour.append(el("option", { value: "", text: "--" }));
+    for (let h = 0; h < 24; h += 1) {
+      const value = String(h).padStart(2, "0");
+      hour.append(el("option", { value, text: value }));
+    }
+
+    const minute = $(`#${side}-minute`);
+    for (const m of QUARTERS) {
+      minute.append(el("option", { value: m, text: m }));
+    }
+  }
+}
+
+const QUARTERS = ["00", "15", "30", "45"];
+
+/** "HH:MM", or "" when this end has no hour chosen. */
+function readTime(side) {
+  const hour = $(`#${side}-hour`).value;
+  return hour ? `${hour}:${$(`#${side}-minute`).value}` : "";
+}
+
+function writeTime(side, value) {
+  const [hour = "", minute = "00"] = String(value || "").split(":");
+  $(`#${side}-hour`).value = hour;
+  $(`#${side}-minute`).value = QUARTERS.includes(minute) ? minute : "00";
+}
+
 const DAY_BUTTONS = () => [
   ...$("#background-days").querySelectorAll("button[data-day]"),
 ];
@@ -725,8 +783,10 @@ function paintBackgroundWindow() {
 
   field.classList.toggle("is-disabled", off);
   for (const id of [
-    "#background-from",
-    "#background-to",
+    "#from-hour",
+    "#from-minute",
+    "#to-hour",
+    "#to-minute",
     "#background-clear",
   ]) {
     $(id).disabled = off;
@@ -738,39 +798,26 @@ function paintBackgroundWindow() {
     : describeBackgroundWindow(minutes);
 }
 
-const DAY_NAMES = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-];
-
 function describeBackgroundWindow(minutes) {
   const every =
     minutes === 60 ? "Checks hourly" : `Checks every ${minutes} minutes`;
 
-  const picked = selectedDays();
-  // Saying "on no days" would be describing a setting rather than warning about
-  // one. Nothing will run, so say that first.
-  if (picked.length === 0)
+  // Saying "on no days" would describe a setting rather than warn about one.
+  // Nothing will run, so say that first.
+  const said = describeDays(selectedDays());
+  if (!said)
     return "No days selected, so nothing will be checked in the background.";
 
-  const days =
-    picked.length === 7
-      ? " every day"
-      : ` on ${picked.map((d) => DAY_NAMES[d]).join(", ")}`;
-
-  const from = $("#background-from").value;
-  const to = $("#background-to").value;
-  if (!from || !to || from === to) return `${every}${days}, at any hour.`;
+  // Commas rather than "on": "on Monday to Friday" is a preposition fighting a
+  // range, and the same clause has to carry "every day" too.
+  const from = readTime("from");
+  const to = readTime("to");
+  if (!from || !to || from === to) return `${every}, ${said}, at any hour.`;
 
   // A window that ends before it starts runs through midnight, and saying so
   // is the difference between a setting people trust and one they re-check.
   const overnight = from > to ? ", through midnight" : "";
-  return `${every}${days} between ${from} and ${to}${overnight}.`;
+  return `${every}, ${said}, between ${from} and ${to}${overnight}.`;
 }
 
 /** Take the user to the control the warning is about, and leave the choice to them. */

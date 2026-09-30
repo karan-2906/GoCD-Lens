@@ -178,6 +178,51 @@ export function withinSchedule(
   return start < end ? at >= start && at < end : at >= start || at < end;
 }
 
+const DAY_NAMES = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
+
+/** Monday first, because that is how a working week is read, not getDay() order. */
+const WEEK = [1, 2, 3, 4, 5, 6, 0];
+
+/**
+ * A set of days as a person would say it.
+ *
+ * Reading back "Monday, Tuesday, Wednesday, Thursday, Friday" is a list you
+ * have to parse; "Monday to Friday" is a fact you can check at a glance. So a
+ * run of days collapses to its ends, and only a set with gaps in it gets
+ * spelled out -- because for those there is nothing shorter that is still true.
+ *
+ * Returns null for the empty set: "no days" is a warning rather than a
+ * description, and the caller says it in its own words.
+ */
+export function describeDays(days) {
+  const picked = WEEK.filter((day) => (days || []).includes(day));
+  if (picked.length === 0) return null;
+  if (picked.length === 7) return "every day";
+
+  const name = (day) => DAY_NAMES[day];
+  const at = picked.map((day) => WEEK.indexOf(day));
+  const runs = at.every((slot, i) => i === 0 || slot === at[i - 1] + 1);
+
+  if (runs) {
+    if (picked.length === 1) return name(picked[0]);
+    // Two days are a pair, not a range: "Saturday and Sunday" rather than
+    // "Saturday to Sunday", which reads like it is missing something.
+    if (picked.length === 2) return `${name(picked[0])} and ${name(picked[1])}`;
+    return `${name(picked[0])} to ${name(picked[picked.length - 1])}`;
+  }
+
+  const names = picked.map(name);
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}
+
 /**
  * The days a schedule allows, as `Date.getDay()` numbers, or null for "any".
  *
